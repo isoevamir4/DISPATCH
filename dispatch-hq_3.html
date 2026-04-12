@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dispatch HQ — Izik Taxi</title>
+<style>
+:root{
+  --bg:#0d0f14;--bg1:#13161e;--bg2:#1a1e28;--bg3:#222736;--bg4:#2a3045;
+  --br:#2e3548;--br2:#3d4660;
+  --tx0:#f0f2f8;--tx1:#b0b8d0;--tx2:#7a85a0;--tx3:#4a5270;
+  --blue:#4e8ef7;--blue2:#2d6be4;--blue-bg:#1a2540;
+  --green:#3ec97a;--green-bg:#0d2418;
+  --amber:#f5a623;--amber-bg:#251a06;
+  --red:#f05050;--red-bg:#250d0d;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* AUTH PAGE */
+.auth-page{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.auth-card{background:var(--bg1);border:1px solid var(--br);border-radius:16px;padding:32px 28px;width:100%;max-width:380px;text-align:center}
+.auth-icon{width:60px;height:60px;background:var(--blue2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.auth-title{font-size:22px;font-weight:700;color:var(--tx0);margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--tx2);margin-bottom:24px;line-height:1.5}
+.auth-input{width:100%;padding:13px 16px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:17px;color:var(--tx0);font-family:inherit;outline:none;text-align:center;letter-spacing:1px;margin-bottom:10px}
+.auth-input:focus{border-color:var(--blue2)}
+.auth-input::placeholder{color:var(--tx3);letter-spacing:0}
+.otp-boxes{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.otp-box{width:44px;height:52px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:22px;font-weight:700;color:var(--tx0);text-align:center;font-family:inherit;outline:none}
+.otp-box:focus{border-color:var(--blue2)}
+#recaptcha-container{display:flex;justify-content:center;margin-bottom:14px}
+
+.topbar{background:var(--bg1);border-bottom:1px solid var(--br);padding:0 18px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.tlogo{width:28px;height:28px;background:var(--blue2);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.appname{font-size:15px;font-weight:700;color:var(--tx0)}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 9px;border-radius:20px;border:1px solid #1a4a2e}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+.clock{font-size:12px;color:var(--tx2)}
+.navtabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--br);border-radius:var(--r-sm);padding:2px}
+.ntab{padding:5px 14px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;color:var(--tx2);border:none;background:transparent;transition:all 0.12s;font-family:inherit;position:relative}
+.ntab:hover{color:var(--tx1)}
+.ntab.on{background:var(--bg3);color:var(--tx0);border:1px solid var(--br2)}
+.ntab-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--red);display:none}
+.ntab-dot.show{display:block}
+.dispatcher-name{font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:6px}
+.signout-btn{font-size:11px;color:var(--tx3);cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 8px;border-radius:4px}
+.signout-btn:hover{color:var(--red)}
+
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:295px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--br);display:flex;flex-direction:column;overflow:hidden}
+.sb-scroll{flex:1;overflow-y:auto;padding:14px}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--br2);border-radius:3px}
+.content{flex:1;min-width:0;overflow-y:auto;background:var(--bg);position:relative}
+.screen{display:none;height:100%}.screen.on{display:block}
+
+.sec{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px}
+.fg{margin-bottom:9px}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:3px;font-weight:500}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 11px;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r-sm);font-size:13px;color:var(--tx0);font-family:inherit;outline:none;transition:border 0.12s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--blue2)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--tx3)}
+.fg textarea{resize:none;height:52px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--br2);background:var(--bg3);color:var(--tx1);transition:all 0.12s;font-family:inherit;width:100%}
+.btn:hover{background:var(--bg4);color:var(--tx0)}
+.btn.blue{background:var(--blue2);color:#fff;border-color:var(--blue2)}.btn.blue:hover{background:#2560d0}
+.btn.green{background:#1a4a2e;color:var(--green);border-color:#2a6040}
+.btn.sm{width:auto;padding:5px 11px;font-size:11px}
+.btn:disabled{opacity:0.5;cursor:default}
+.btn-auth{width:100%;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;transition:all 0.15s;margin-bottom:8px}
+.btn-auth:disabled{opacity:0.5}
+.btn-ghost{background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:6px}
+
+.dcard{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r-md);border:1px solid var(--br);margin-bottom:6px;cursor:pointer;transition:all 0.12s;background:var(--bg2)}
+.dcard:hover{border-color:var(--br2);background:var(--bg3)}
+.dcard.sel{border-color:var(--blue);background:var(--blue-bg)}
+.dname{font-size:12px;font-weight:600;color:var(--tx0)}
+.dmeta{font-size:10px;color:var(--tx2);margin-top:1px}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.badge{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;display:inline-block;white-space:nowrap}
+.bon{background:#0d2e1a;color:var(--green);border:1px solid #1a4a2e}
+.btrip{background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a}
+.boff{background:var(--bg3);color:var(--tx2);border:1px solid var(--br)}
+
+.dpanel{background:var(--green-bg);border:1px solid #1a4a2e;border-radius:var(--r-md);padding:12px;margin-top:10px;display:none}
+.dpanel.show{display:block}
+
+.fare-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)}
+.fare-item:last-child{border-bottom:none}
+.fare-amt{font-size:17px;font-weight:700;color:var(--green);min-width:56px}
+.fare-detail{flex:1}
+.fare-name{font-size:12px;font-weight:600;color:var(--tx0)}
+.fare-route{font-size:10px;color:var(--tx2);margin-top:1px}
+.fare-time{font-size:10px;color:var(--tx3);flex-shrink:0}
+
+.log-item{font-size:11px;padding:6px 0;border-bottom:1px solid var(--br);color:var(--tx2);display:flex;gap:7px}
+.log-item:last-child{border-bottom:none}
+.lot{color:var(--tx3);flex-shrink:0;font-size:10px}
+.lok{color:var(--green);font-weight:600}
+
+#gmap{width:100%;height:100%}
+.map-bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(13,15,20,0.92);border:1px solid var(--br2);border-radius:24px;padding:7px 18px;font-size:12px;color:var(--tx1);display:flex;gap:14px;align-items:center;z-index:5;pointer-events:none;white-space:nowrap}
+.map-bar strong{color:var(--tx0);font-size:14px;font-weight:700}
+.map-sep{width:1px;height:14px;background:var(--br2)}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:24px;font-size:12px;font-weight:600;display:none;z-index:9999;white-space:nowrap;border:1px solid}
+.tok{background:var(--green-bg);color:var(--green);border-color:#1a4a2e}
+.terr{background:var(--red-bg);color:var(--red);border-color:#3d1515}
+.tinfo{background:#1a2540;color:var(--blue);border-color:#2d4a80}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:sp 0.6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.rpage{padding:16px;overflow-y:auto;height:100%}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r-md);padding:14px}
+.mlabel{font-size:10px;color:var(--tx2);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.mval{font-size:22px;font-weight:700;color:var(--tx0)}
+.msub{font-size:10px;color:var(--tx3);margin-top:2px}
+.card{background:var(--bg1);border:1px solid var(--br);border-radius:var(--r-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:600;color:var(--tx1);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.rtbl{width:100%;border-collapse:collapse;font-size:12px}
+.rtbl th{padding:8px 10px;text-align:left;font-weight:500;color:var(--tx2);border-bottom:1px solid var(--br);font-size:10px;text-transform:uppercase}
+.rtbl td{padding:9px 10px;border-bottom:1px solid var(--br);color:var(--tx1)}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl tr:hover td{background:var(--bg2)}
+.bar-wrap{display:flex;align-items:flex-end;gap:5px;height:130px}
+.bc{display:flex;flex-direction:column;align-items:center;flex:1;gap:3px}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:height 0.4s}
+.blbl{font-size:9px;color:var(--tx3)}
+.bval{font-size:9px;color:var(--tx2)}
+.period-tabs{display:flex;gap:4px;margin-bottom:14px}
+.ptab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--br);background:transparent;color:var(--tx2);font-family:inherit;transition:all 0.12s}
+.ptab.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.chat-page{padding:16px;overflow-y:auto;height:100%;display:flex;flex-direction:column;gap:12px}
+.chat-driver-btn{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r-md);border:1px solid var(--br);background:var(--bg2);cursor:pointer;transition:all 0.12s;margin-bottom:6px}
+.chat-driver-btn:hover{border-color:var(--br2);background:var(--bg3)}
+.chat-driver-btn.sel{border-color:var(--blue);background:var(--blue-bg)}
+.chat-unread{margin-left:auto;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center}
+.chat-unread.show{display:flex}
+.chat-window{background:var(--bg1);border:1px solid var(--br);border-radius:var(--r-lg);flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:420px}
+.chat-win-hdr{padding:12px 14px;border-bottom:1px solid var(--br);font-size:13px;font-weight:600;color:var(--tx0);display:flex;align-items:center;gap:8px}
+.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg-wrap{display:flex;flex-direction:column}
+.msg-wrap.me{align-items:flex-end}
+.msg-wrap.them{align-items:flex-start}
+.msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.msg.me{background:var(--blue2);color:#fff;border-radius:12px 12px 3px 12px}
+.msg.them{background:var(--bg3);color:var(--tx0);border-radius:12px 12px 12px 3px}
+.msg-time{font-size:10px;color:var(--tx3);margin-top:3px}
+.msg-sender{font-size:10px;color:var(--tx2);margin-bottom:3px;font-weight:600}
+.chat-input-bar{padding:10px 12px;border-top:1px solid var(--br);display:flex;gap:8px}
+.chat-input-bar input{flex:1;padding:9px 12px;background:var(--bg2);border:1px solid var(--br2);border-radius:9px;font-size:13px;color:var(--tx0);font-family:inherit;outline:none}
+.chat-input-bar input:focus{border-color:var(--blue2)}
+.chat-input-bar input::placeholder{color:var(--tx3)}
+.chat-send-btn{padding:9px 16px;background:var(--blue2);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+
+.spage{padding:16px;overflow-y:auto;height:100%;max-width:560px}
+.drow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--br)}
+.drow:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+
+<!-- AUTH PAGE -->
+<div class="auth-page" id="auth-page">
+  <div class="auth-card">
+    <div class="auth-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+        <circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/>
+      </svg>
+    </div>
+    <div class="auth-title">Dispatch HQ</div>
+
+    <!-- STEP 1: Phone -->
+    <div id="auth-step-phone">
+      <div class="auth-sub">Enter your phone number to sign in as dispatcher</div>
+      <input class="auth-input" type="tel" id="phone-input" placeholder="+1 718 555 0000" inputmode="tel"/>
+      <div id="recaptcha-container" style="margin-bottom:12px;display:flex;justify-content:center"></div>
+      <button class="btn-auth" id="btn-send-code" onclick="sendCode()">Send verification code</button>
+    </div>
+
+    <!-- STEP 2: OTP -->
+    <div id="auth-step-otp" style="display:none">
+      <div class="auth-sub">Enter the 6-digit code sent to<br><strong id="phone-display" style="color:var(--tx0)"></strong></div>
+      <div class="otp-boxes">
+        <input class="otp-box" type="number" maxlength="1" id="otp0" oninput="otpInput(0)" onkeydown="otpKey(event,0)"/>
+        <input class="otp-box" type="number" maxlength="1" id="otp1" oninput="otpInput(1)" onkeydown="otpKey(event,1)"/>
+        <input class="otp-box" type="number" maxlength="1" id="otp2" oninput="otpInput(2)" onkeydown="otpKey(event,2)"/>
+        <input class="otp-box" type="number" maxlength="1" id="otp3" oninput="otpInput(3)" onkeydown="otpKey(event,3)"/>
+        <input class="otp-box" type="number" maxlength="1" id="otp4" oninput="otpInput(4)" onkeydown="otpKey(event,4)"/>
+        <input class="otp-box" type="number" maxlength="1" id="otp5" oninput="otpInput(5)" onkeydown="otpKey(event,5)"/>
+      </div>
+      <button class="btn-auth" id="btn-verify" onclick="verifyCode()">Verify & sign in</button>
+      <button class="btn-ghost" onclick="backToPhone()">Use a different number</button>
+    </div>
+
+    <!-- STEP 3: Profile (first time dispatcher) -->
+    <div id="auth-step-profile" style="display:none">
+      <div class="auth-sub">Set up your dispatcher profile</div>
+      <div style="text-align:left">
+        <div class="fg"><label>Your name</label><input type="text" id="disp-name" placeholder="Dispatcher name"/></div>
+        <div class="fg"><label>Role</label>
+          <select id="disp-role">
+            <option value="dispatcher">Dispatcher</option>
+            <option value="head_dispatcher">Head Dispatcher</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-auth" onclick="saveDispatcherProfile()">Enter Dispatch HQ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="topbar">
+  <div class="topbar-l">
+    <div class="tlogo">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+        <circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/>
+      </svg>
+    </div>
+    <span class="appname">Dispatch HQ</span>
+    <div class="live-pill"><div class="ldot"></div>Live</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="clock" id="clock-el"></span>
+    <span class="dispatcher-name" id="dispatcher-label"></span>
+    <button class="signout-btn" onclick="doSignOut()">Sign out</button>
+    <div class="navtabs">
+      <button class="ntab on" onclick="goTab('dispatch',this)">Dispatch</button>
+      <button class="ntab" onclick="goTab('reporting',this)">Reporting</button>
+      <button class="ntab" onclick="goTab('chat',this)">Messages<div class="ntab-dot" id="msg-dot"></div></button>
+      <button class="ntab" onclick="goTab('settings',this)">Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-scroll">
+      <div class="sec">New booking</div>
+      <div class="fg"><label>Client phone</label><input id="f-phone" placeholder="+1 718 555 0000"/></div>
+      <div class="fg"><label>Pickup address (A)</label><input id="f-pickup" placeholder="123 Main St, Brooklyn" oninput="geocodePickup()"/></div>
+      <div class="fg"><label>Drop-off address (B)</label><input id="f-dropoff" placeholder="JFK Airport Terminal 4"/></div>
+      <div class="fg"><label>Agreed fare ($)</label><input id="f-fare" type="number" placeholder="35"/></div>
+      <div class="fg"><label>Notes</label><textarea id="f-notes" placeholder="Luggage, special instructions..."></textarea></div>
+      <div style="margin-bottom:10px">
+        <div class="sec" style="margin-bottom:6px">Select driver</div>
+        <div id="dlist"></div>
+      </div>
+      <button class="btn blue" onclick="dispatchJob()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+        Dispatch job to driver
+      </button>
+      <div class="dpanel" id="dpanel">
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <div style="width:7px;height:7px;border-radius:50%;background:var(--green)"></div>
+          Job dispatched
+        </div>
+        <div style="font-size:11px;color:#3a6040" id="dp-detail"></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="sec">Incoming fares</div>
+        <div id="fare-feed"><div style="font-size:11px;color:var(--tx3);padding:4px 0">Waiting for drivers...</div></div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="sec">Dispatch log</div>
+        <div id="dispatch-log" style="max-height:130px;overflow-y:auto"><div style="font-size:11px;color:var(--tx3);padding:4px 0">No jobs dispatched yet.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <!-- DISPATCH MAP -->
+    <div id="sc-dispatch" class="screen on">
+      <div id="gmap"></div>
+      <div class="map-bar">
+        <div><strong id="online-cnt">0</strong> online</div>
+        <div class="map-sep"></div>
+        <div><span style="color:var(--amber)" id="trip-cnt">0</span> on trip</div>
+        <div class="map-sep"></div>
+        <div id="map-ping" style="font-size:10px;color:var(--tx3)">connecting...</div>
+      </div>
+    </div>
+
+    <!-- REPORTING -->
+    <div id="sc-reporting" class="screen">
+      <div class="rpage">
+        <div class="period-tabs">
+          <button class="ptab on" onclick="setPeriod('daily',this)">Daily</button>
+          <button class="ptab" onclick="setPeriod('weekly',this)">Weekly</button>
+          <button class="ptab" onclick="setPeriod('monthly',this)">Monthly</button>
+        </div>
+        <div class="metric-grid" id="rep-metrics"></div>
+        <div class="grid2">
+          <div class="card"><div class="card-title">Revenue by day</div><div class="bar-wrap" id="day-chart"></div></div>
+          <div class="card"><div class="card-title">Driver earnings</div><div class="bar-wrap" id="drv-chart"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>Driver performance</span><button class="btn sm" onclick="exportCSV()" style="font-size:10px;padding:4px 10px">Export CSV</button></div>
+          <div style="overflow-x:auto"><table class="rtbl" id="perf-tbl"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent trips</div>
+          <div id="recent-trips"><div style="font-size:12px;color:var(--tx3);padding:6px 0">No completed trips yet.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="sc-chat" class="screen">
+      <div class="chat-page">
+        <div>
+          <div class="sec" style="margin-bottom:8px">Select driver to message</div>
+          <div id="chat-driver-list"></div>
+        </div>
+        <div class="chat-window" id="chat-window" style="display:none">
+          <div class="chat-win-hdr">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+            <span id="chat-driver-name">—</span>
+            <span style="font-size:10px;color:var(--tx2);margin-left:4px" id="chat-driver-status"></span>
+          </div>
+          <div class="chat-messages" id="chat-msgs"><div style="text-align:center;padding:20px;color:var(--tx3);font-size:12px">Select a driver to start messaging.</div></div>
+          <div class="chat-input-bar">
+            <input type="text" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendDispatchMsg()"/>
+            <button class="chat-send-btn" onclick="sendDispatchMsg()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sc-settings" class="screen">
+      <div class="spage">
+        <div class="card">
+          <div class="card-title">Active drivers</div>
+          <div id="roster"></div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">Drivers register themselves through the driver app at <strong style="color:var(--tx1)">driver.iziktaxi.com</strong></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Dispatchers</div>
+          <div id="dispatcher-list"></div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">Dispatchers sign in at <strong style="color:var(--tx1)">dispatch.iziktaxi.com</strong> using their phone number</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut as fbSignOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getDatabase, ref, set, get, push, update, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDyfq2Cmj9LmMpY3FIJ8TuLHiQ7PYBQTys",
+  authDomain: "izik-taxi-service.firebaseapp.com",
+  databaseURL: "https://izik-taxi-service-default-rtdb.firebaseio.com",
+  projectId: "izik-taxi-service",
+  storageBucket: "izik-taxi-service.firebasestorage.app",
+  messagingSenderId: "835965697791",
+  appId: "1:835965697791:web:fa2830a4b400c0803656ca"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const AVS = [{bg:'#1a2e50',c:'#4e8ef7'},{bg:'#0d2a1e',c:'#3ec97a'},{bg:'#2a1e08',c:'#f5a623'},{bg:'#2a0e14',c:'#f06090'},{bg:'#1a1040',c:'#a080f0'}];
+const BCOLS = ['#4e8ef7','#3ec97a','#f5a623','#f06090','#a080f0'];
+const MAPS_KEY = 'AIzaSyAoy6ZHvw5deft3lzjkJdMVH42e0SJV1eM';
+
+let dispatcher = null;
+let drivers = [];
+let fareFeed = [], dispatchLogs = [], selDriverId = null, curTab = 'dispatch', curPeriod = 'weekly';
+let chatDriverId = null, chatMessages = {}, unreadCounts = {};
+let map = null, driverMarkers = {}, pickupMarker = null, geocoder = null;
+let confirmationResult = null;
+
+function ini(n){return (n||'??').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);}
+
+/* ── TOAST ── */
+window.toast = function(msg,cls='tok',dur=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+cls; t.style.display='block';
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',dur);
+}
+
+/* ── CLOCK ── */
+function tick(){document.getElementById('clock-el').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+tick(); setInterval(tick,10000);
+
+/* ── AUTH ── */
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    const snap = await get(ref(db, `dispatchers/${user.uid}`));
+    if (snap.exists()) {
+      dispatcher = { uid: user.uid, ...snap.val() };
+      showApp();
+    } else {
+      document.getElementById('auth-step-phone').style.display='none';
+      document.getElementById('auth-step-otp').style.display='none';
+      document.getElementById('auth-step-profile').style.display='block';
+    }
+  } else {
+    document.getElementById('auth-page').style.display='flex';
+    setupRecaptcha();
+  }
+});
+
+function showApp() {
+  document.getElementById('auth-page').style.display='none';
+  document.getElementById('dispatcher-label').innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${dispatcher.name}`;
+  startPolling();
+}
+
+function setupRecaptcha() {
+  if (window.recaptchaVerifier) return;
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'normal' });
+}
+
+window.sendCode = async function() {
+  const phone = document.getElementById('phone-input').value.trim();
+  if (!phone) { toast('Enter your phone number', 'terr'); return; }
+  const btn = document.getElementById('btn-send-code');
+  btn.disabled=true; btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle;margin-right:6px"></span>Sending...';
+  try {
+    confirmationResult = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier);
+    document.getElementById('phone-display').textContent = phone;
+    document.getElementById('auth-step-phone').style.display='none';
+    document.getElementById('auth-step-otp').style.display='block';
+    document.getElementById('otp0').focus();
+    toast('Code sent!');
+  } catch(e) {
+    toast('Error: '+e.message,'terr',6000);
+    btn.disabled=false; btn.innerHTML='Send verification code';
+  }
+}
+
+window.otpInput = function(i) {
+  const val=document.getElementById('otp'+i).value;
+  if(val.length>1) document.getElementById('otp'+i).value=val.slice(-1);
+  if(val&&i<5) document.getElementById('otp'+(i+1)).focus();
+  const code=Array.from({length:6},(_,j)=>document.getElementById('otp'+j).value).join('');
+  if(code.length===6) verifyCode();
+}
+
+window.otpKey = function(e,i) {
+  if(e.key==='Backspace'&&!document.getElementById('otp'+i).value&&i>0) document.getElementById('otp'+(i-1)).focus();
+}
+
+window.verifyCode = async function() {
+  const code=Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');
+  if(code.length<6){toast('Enter the full 6-digit code','terr');return;}
+  const btn=document.getElementById('btn-verify');
+  btn.disabled=true; btn.innerHTML='Verifying...';
+  try { await confirmationResult.confirm(code); toast('Signed in!'); }
+  catch(e){toast('Invalid code','terr'); btn.disabled=false; btn.innerHTML='Verify & sign in';}
+}
+
+window.backToPhone = function() {
+  document.getElementById('auth-step-otp').style.display='none';
+  document.getElementById('auth-step-phone').style.display='block';
+  document.getElementById('btn-send-code').disabled=false;
+  document.getElementById('btn-send-code').innerHTML='Send verification code';
+}
+
+window.saveDispatcherProfile = async function() {
+  const name=document.getElementById('disp-name').value.trim();
+  if(!name){toast('Enter your name','terr');return;}
+  const user=auth.currentUser;
+  const role=document.getElementById('disp-role').value;
+  const profile={uid:user.uid,name,role,phone:user.phoneNumber,createdAt:new Date().toISOString()};
+  await set(ref(db,`dispatchers/${user.uid}`),profile);
+  dispatcher=profile;
+  showApp();
+}
+
+window.doSignOut = async function() {
+  await fbSignOut(auth);
+  location.reload();
+}
+
+/* ── TABS ── */
+window.goTab = function(t,el){
+  curTab=t;
+  document.querySelectorAll('.ntab').forEach(x=>x.classList.remove('on')); el.classList.add('on');
+  ['dispatch','reporting','chat','settings'].forEach(s=>document.getElementById('sc-'+s).classList.toggle('on',s===t));
+  document.getElementById('sidebar').style.display=t==='dispatch'?'flex':'none';
+  if(t==='reporting') renderReporting();
+  if(t==='settings') renderSettings();
+  if(t==='chat'){renderChatDriverList();document.getElementById('msg-dot').classList.remove('show');}
+}
+
+/* ── GOOGLE MAPS INIT ── */
+window.initMap = function() {
+  map=new google.maps.Map(document.getElementById('gmap'),{
+    center:{lat:40.7128,lng:-74.006},zoom:11,
+    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]}],
+    mapTypeControl:false,streetViewControl:false,fullscreenControl:true
+  });
+  geocoder=new google.maps.Geocoder();
+  startPolling();
+}
+
+geocodePickup._t=null;
+window.geocodePickup = function() {
+  const addr=document.getElementById('f-pickup').value.trim();
+  if(!addr||addr.length<6||!geocoder) return;
+  clearTimeout(geocodePickup._t);
+  geocodePickup._t=setTimeout(()=>{
+    geocoder.geocode({address:addr},(results,status)=>{
+      if(status!=='OK') return;
+      const pos=results[0].geometry.location;
+      if(pickupMarker) pickupMarker.setMap(null);
+      pickupMarker=new google.maps.Marker({position:pos,map,title:'Pickup',icon:{path:google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,scale:6,fillColor:'#f05050',fillOpacity:1,strokeColor:'#a02020',strokeWeight:1.5}});
+      map.panTo(pos);
+    });
+  },700);
+}
+
+/* ── POLLING ── */
+function startPolling(){ setInterval(pollFirebase,6000); pollFirebase(); }
+
+async function pollFirebase() {
+  try {
+    const dr=await get(ref(db,'drivers')); 
+    const drData=dr.val();
+    if(drData){
+      drivers=Object.values(drData).map(d=>({...d,status:d.onTrip?'on trip':d.active?'available':'offline'}));
+      drivers.forEach(d=>updateDriverPin(d));
+      renderDriverList();
+      document.getElementById('online-cnt').textContent=drivers.filter(d=>d.status!=='offline').length;
+      document.getElementById('trip-cnt').textContent=drivers.filter(d=>d.status==='on trip').length;
+      document.getElementById('map-ping').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+
+    const tr=await get(ref(db,'trips'));
+    const trData=tr.val();
+    if(trData){
+      const all=[];
+      Object.values(trData).forEach(dt=>Object.values(dt).forEach(t=>all.push(t)));
+      all.sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt));
+      const newOnes=all.filter(t=>!fareFeed.find(f=>f.id===t.id));
+      if(newOnes.length){
+        newOnes.forEach(t=>{
+          fareFeed.unshift({id:t.id,driverName:t.driverName,fare:t.fare,pickup:t.pickup,dropoff:t.dropoff,time:new Date(t.completedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+          toast('Fare: $'+t.fare.toFixed(2)+' from '+t.driverName,'tok');
+        });
+        renderFareFeed();
+        if(curTab==='reporting') renderReporting();
+      }
+    }
+
+    if(chatDriverId){
+      const ms=await get(ref(db,`messages/${chatDriverId}`));
+      const msData=ms.val();
+      if(msData){
+        const arr=Object.values(msData).sort((a,b)=>a.ts-b.ts);
+        const prev=(chatMessages[chatDriverId]||[]).length;
+        chatMessages[chatDriverId]=arr;
+        if(arr.length>prev){
+          if(curTab==='chat') renderChatWindow();
+          else {
+            unreadCounts[chatDriverId]=(unreadCounts[chatDriverId]||0)+(arr.length-prev);
+            document.getElementById('msg-dot').classList.add('show');
+            const last=arr[arr.length-1];
+            if(last.from==='driver') toast('Message from '+last.sender+': '+last.text.slice(0,40),'tinfo',4000);
+          }
+        }
+      }
+    }
+  } catch(e){ console.warn('Poll error',e); }
+}
+
+/* ── MAP PINS ── */
+function updateDriverPin(d) {
+  if(!map||!d.lat||!d.lng||!d.active){
+    if(driverMarkers[d.uid]){driverMarkers[d.uid].setMap(null);delete driverMarkers[d.uid];}
+    return;
+  }
+  const i=drivers.indexOf(d)%AVS.length;
+  const av=AVS[i<0?0:i];
+  const pos={lat:d.lat,lng:d.lng};
+  if(driverMarkers[d.uid]){ driverMarkers[d.uid].setPosition(pos); }
+  else {
+    driverMarkers[d.uid]=new google.maps.Marker({
+      position:pos,map,title:d.name||'Driver',
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:av.bg,fillOpacity:1,strokeColor:av.c,strokeWeight:2.5},
+      label:{text:ini(d.name||'?'),color:av.c,fontSize:'10px',fontWeight:'700'}
+    });
+    driverMarkers[d.uid].addListener('click',()=>{selDriverId=d.uid;renderDriverList();map.panTo(pos);map.setZoom(14);});
+  }
+}
+
+function renderDriverList(){
+  document.getElementById('dlist').innerHTML=drivers.length
+    ?drivers.map((d,i)=>{
+      const av=AVS[i%AVS.length];
+      return `<div class="dcard ${selDriverId===d.uid?'sel':''}" onclick="selDriver('${d.uid}')">
+        <div class="av" style="width:30px;height:30px;font-size:10px;background:${av.bg};color:${av.c}">${ini(d.name)}</div>
+        <div style="flex:1;min-width:0"><div class="dname">${d.name||'Driver'}</div><div class="dmeta">${d.zone||'—'} · ${d.vehicle||'—'}</div></div>
+        <span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span>
+      </div>`;}).join('')
+    :'<div style="font-size:11px;color:var(--tx3);padding:8px 0">No drivers online yet.</div>';
+}
+
+window.selDriver = function(uid){
+  selDriverId=uid; renderDriverList();
+  const d=drivers.find(x=>x.uid===uid);
+  if(d&&d.lat&&map){map.panTo({lat:d.lat,lng:d.lng});map.setZoom(14);}
+}
+
+/* ── DISPATCH ── */
+window.dispatchJob = async function(){
+  const phone=document.getElementById('f-phone').value.trim();
+  const pickup=document.getElementById('f-pickup').value.trim();
+  const dropoff=document.getElementById('f-dropoff').value.trim();
+  const fare=document.getElementById('f-fare').value.trim();
+  const notes=document.getElementById('f-notes').value.trim();
+  if(!phone||!pickup){toast('Enter client phone and pickup address','terr');return;}
+  if(!selDriverId){toast('Select a driver first','terr');return;}
+  const driver=drivers.find(d=>d.uid===selDriverId);
+  if(!driver){toast('Driver not found','terr');return;}
+  const job={phone,pickup,dropoff,fare:parseFloat(fare)||0,notes,status:'pending',dispatchedAt:new Date().toISOString(),dispatchedTo:driver.name,dispatchedBy:dispatcher?.name||'Dispatch'};
+  try{
+    await set(ref(db,`jobs/${selDriverId}`),job);
+    const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    dispatchLogs.unshift({t,driver:driver.name,pickup,fare});
+    renderDispatchLog();
+    document.getElementById('dp-detail').innerHTML=`<strong>${driver.name}</strong> · ${pickup} → ${dropoff||'TBD'} · $${fare||'TBD'}`;
+    document.getElementById('dpanel').classList.add('show');
+    clearForm();
+    toast('Job dispatched to '+driver.name,'tok');
+    setTimeout(()=>document.getElementById('dpanel').classList.remove('show'),6000);
+  }catch(e){toast('Failed to dispatch','terr');}
+}
+
+function clearForm(){
+  ['f-phone','f-pickup','f-dropoff','f-fare','f-notes'].forEach(id=>document.getElementById(id).value='');
+  if(pickupMarker){pickupMarker.setMap(null);pickupMarker=null;}
+}
+
+function renderDispatchLog(){
+  const el=document.getElementById('dispatch-log');
+  el.innerHTML=dispatchLogs.length
+    ?dispatchLogs.map(l=>`<div class="log-item"><span class="lot">${l.t}</span><span class="lok">Sent</span> <span style="color:var(--tx1)">${l.driver}</span> <span style="color:var(--tx3)">· ${(l.pickup||'').slice(0,25)}</span></div>`).join('')
+    :'<div style="font-size:11px;color:var(--tx3);padding:4px 0">No jobs dispatched yet.</div>';
+}
+
+function renderFareFeed(){
+  const el=document.getElementById('fare-feed');
+  el.innerHTML=fareFeed.length
+    ?fareFeed.slice(0,8).map(f=>`<div class="fare-item"><div class="fare-amt">$${f.fare.toFixed(2)}</div><div class="fare-detail"><div class="fare-name">${f.driverName}</div><div class="fare-route">${f.pickup} → ${f.dropoff}</div></div><div class="fare-time">${f.time}</div></div>`).join('')
+    :'<div style="font-size:11px;color:var(--tx3);padding:4px 0">Waiting for drivers...</div>';
+}
+
+/* ── CHAT ── */
+function renderChatDriverList(){
+  document.getElementById('chat-driver-list').innerHTML=drivers.map((d,i)=>{
+    const av=AVS[i%AVS.length],unread=unreadCounts[d.uid]||0;
+    return `<div class="chat-driver-btn ${chatDriverId===d.uid?'sel':''}" onclick="openChat('${d.uid}')">
+      <div class="av" style="width:28px;height:28px;font-size:10px;background:${av.bg};color:${av.c}">${ini(d.name)}</div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name||'Driver'}</div><div style="font-size:10px;color:var(--tx2)">${d.zone||'—'}</div></div>
+      <span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span>
+      <div class="chat-unread ${unread?'show':''}">${unread||''}</div>
+    </div>`;
+  }).join('');
+}
+
+window.openChat = async function(uid){
+  chatDriverId=uid; unreadCounts[uid]=0;
+  const d=drivers.find(x=>x.uid===uid);
+  document.getElementById('chat-driver-name').textContent=d?.name||uid;
+  document.getElementById('chat-driver-status').textContent=d?.status||'';
+  document.getElementById('chat-window').style.display='flex';
+  try{
+    const ms=await get(ref(db,`messages/${uid}`));
+    chatMessages[uid]=ms.val()?Object.values(ms.val()).sort((a,b)=>a.ts-b.ts):[];
+  }catch(e){chatMessages[uid]=[];}
+  renderChatDriverList(); renderChatWindow();
+}
+
+function renderChatWindow(){
+  const msgs=chatMessages[chatDriverId]||[];
+  const el=document.getElementById('chat-msgs');
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:12px">No messages yet.</div>';return;}
+  el.innerHTML=msgs.map(m=>{
+    const isMe=m.from==='dispatch';
+    const time=new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return `<div class="msg-wrap ${isMe?'me':'them'}">
+      ${!isMe?`<div class="msg-sender">${m.sender||'Driver'}</div>`:''}
+      <div class="msg ${isMe?'me':'them'}">${m.text}<div class="msg-time">${time}</div></div>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+window.sendDispatchMsg = async function(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text||!chatDriverId) return;
+  input.value='';
+  const msg={text,from:'dispatch',sender:dispatcher?.name||'Dispatch',ts:Date.now()};
+  if(!chatMessages[chatDriverId]) chatMessages[chatDriverId]=[];
+  chatMessages[chatDriverId].push(msg);
+  renderChatWindow();
+  try{await push(ref(db,`messages/${chatDriverId}`),msg);}catch(e){toast('Message failed','terr');}
+}
+
+/* ── REPORTING ── */
+window.setPeriod = function(p,el){curPeriod=p;document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderReporting();}
+
+function renderReporting(){
+  const tot=fareFeed.reduce((s,f)=>s+f.fare,0);
+  const totTrips=fareFeed.length;
+  const driverTotals={};
+  fareFeed.forEach(f=>{driverTotals[f.driverName]=(driverTotals[f.driverName]||0)+f.fare;});
+  const best=Object.entries(driverTotals).sort((a,b)=>b[1]-a[1])[0];
+  const avgD=drivers.length&&totTrips?Math.round(tot/drivers.length):0;
+  document.getElementById('rep-metrics').innerHTML=`
+    <div class="metric"><div class="mlabel">Total revenue</div><div class="mval" style="color:var(--green)">$${tot.toFixed(0)}</div><div class="msub">${curPeriod}</div></div>
+    <div class="metric"><div class="mlabel">Total trips</div><div class="mval">${totTrips}</div><div class="msub">completed</div></div>
+    <div class="metric"><div class="mlabel">Top driver</div><div class="mval" style="color:var(--amber)">${best?best[0].split(' ')[0]:'—'}</div><div class="msub">$${best?best[1].toFixed(0):0}</div></div>
+    <div class="metric"><div class="mlabel">Avg/driver</div><div class="mval">$${avgD}</div><div class="msub">total earned</div></div>`;
+
+  const dayT=DAYS.map((_,i)=>fareFeed.filter(f=>new Date(f.time).getDay()===i).reduce((s,f)=>s+f.fare,0));
+  const mxD=Math.max(...dayT,1);
+  document.getElementById('day-chart').innerHTML=dayT.map((v,i)=>`<div class="bc"><div class="bval">$${v.toFixed(0)}</div><div class="bar" style="height:${Math.round(v/mxD*118)}px;background:${i===4?'var(--amber)':'var(--blue2)'}"></div><div class="blbl">${DAYS[i]}</div></div>`).join('');
+
+  const dNames=Object.keys(driverTotals);
+  const mxW=Math.max(...Object.values(driverTotals),1);
+  document.getElementById('drv-chart').innerHTML=dNames.map((name,i)=>`<div class="bc"><div class="bval">$${driverTotals[name].toFixed(0)}</div><div class="bar" style="height:${Math.round(driverTotals[name]/mxW*118)}px;background:${BCOLS[i%BCOLS.length]}"></div><div class="blbl">${name.split(' ')[0]}</div></div>`).join('');
+
+  document.getElementById('perf-tbl').innerHTML=`<thead><tr>${['Driver','Zone','Vehicle','Trips','Total earned','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`+
+    drivers.map((d,i)=>{
+      const av=AVS[i%AVS.length],earned=driverTotals[d.name]||0,trips=fareFeed.filter(f=>f.driverName===d.name).length;
+      return `<tr><td><div style="display:flex;align-items:center;gap:7px"><div class="av" style="width:20px;height:20px;font-size:8px;background:${av.bg};color:${av.c}">${ini(d.name)}</div>${d.name||'—'}</div></td>
+        <td style="color:var(--tx2)">${d.zone||'—'}</td><td style="color:var(--tx2)">${d.vehicle||'—'}</td>
+        <td>${trips}</td><td style="font-weight:700;color:var(--tx0)">$${earned.toFixed(0)}</td>
+        <td><span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span></td></tr>`;
+    }).join('')+'</tbody>';
+
+  document.getElementById('recent-trips').innerHTML=fareFeed.length
+    ?fareFeed.slice(0,10).map(f=>`<div class="fare-item"><div class="fare-amt">$${f.fare.toFixed(2)}</div><div class="fare-detail"><div class="fare-name">${f.driverName}</div><div class="fare-route">${f.pickup} → ${f.dropoff}</div></div><div class="fare-time">${f.time}</div></div>`).join('')
+    :'<div style="font-size:12px;color:var(--tx3);padding:8px 0">No completed trips yet.</div>';
+}
+
+/* ── SETTINGS ── */
+function renderSettings(){
+  document.getElementById('roster').innerHTML=drivers.length
+    ?drivers.map((d,i)=>{
+      const av=AVS[i%AVS.length];
+      return `<div class="drow"><div class="av" style="width:28px;height:28px;font-size:10px;background:${av.bg};color:${av.c}">${ini(d.name)}</div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name||'—'}</div><div style="font-size:10px;color:var(--tx2)">${d.zone||'—'} · ${d.phone||'—'}</div></div>
+        <span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span></div>`;}).join('')
+    :'<div style="font-size:12px;color:var(--tx3);padding:8px 0">No drivers registered yet.</div>';
+
+  get(ref(db,'dispatchers')).then(snap=>{
+    const data=snap.val();
+    document.getElementById('dispatcher-list').innerHTML=data
+      ?Object.values(data).map(d=>`<div class="drow"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name}</div><div style="font-size:10px;color:var(--tx2)">${d.phone||'—'} · ${d.role||'dispatcher'}</div></div></div>`).join('')
+      :'<div style="font-size:12px;color:var(--tx3);padding:8px 0">No dispatchers yet.</div>';
+  });
+}
+
+/* ── CSV EXPORT ── */
+window.exportCSV = function(){
+  const rows=[['Driver','Zone','Vehicle','Trips','Total earned']];
+  drivers.forEach(d=>{
+    const earned=fareFeed.filter(f=>f.driverName===d.name).reduce((s,f)=>s+f.fare,0);
+    const trips=fareFeed.filter(f=>f.driverName===d.name).length;
+    rows.push([d.name,d.zone,d.vehicle,trips,earned.toFixed(2)]);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='iziktaxi_report_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); toast('Report exported','tok');
+}
+
+renderFareFeed();
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoy6ZHvw5deft3lzjkJdMVH42e0SJV1eM&callback=initMap"></script>
+</body>
+</html>
