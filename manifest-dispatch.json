@@ -1,0 +1,24 @@
+{
+  "name": "Izik Taxi Dispatch",
+  "short_name": "IzikDispatch",
+  "description": "Izik Taxi dispatch dashboard - manage drivers and bookings",
+  "start_url": "/dispatch-hq.html",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "icon-dispatch.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-dispatch.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
