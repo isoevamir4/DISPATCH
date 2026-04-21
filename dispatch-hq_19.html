@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IzikDispatch">
+<meta name="theme-color" content="#0d0f14">
+<link rel="manifest" href="manifest-dispatch.json">
+<link rel="apple-touch-icon" href="icon-dispatch.png">
+<title>Dispatch — Izik Taxi</title>
+<meta name="format-detection" content="telephone=no">
+<style>
+:root{
+  --bg:#0d0f14;--bg1:#111827;--bg2:#1a1e28;--bg3:#222736;
+  --br:#1e2a3a;--br2:#2e3d55;
+  --tx0:#f0f2f8;--tx1:#b0b8d0;--tx2:#7a85a0;--tx3:#4a5270;
+  --blue:#4e8ef7;--blue2:#2d6be4;--blue-bg:#1a2540;
+  --green:#3ec97a;--green-bg:#0d2418;
+  --amber:#f5a623;--amber-bg:#251a06;
+  --red:#f05050;--red-bg:#1a0808;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column;height:100vh}
+.hdr{background:var(--bg1);border-bottom:1px solid var(--br);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-left{display:flex;align-items:center;gap:8px}
+.hdr-logo{width:28px;height:28px;background:var(--blue2);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.hdr-title{font-size:16px;font-weight:700;color:var(--tx0)}
+.online-badge{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #1a4a2e}
+.odot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.tabs{display:flex;background:var(--bg1);border-bottom:1px solid var(--br);flex-shrink:0}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;border:none;background:none;font-family:inherit;border-bottom:2px solid transparent;transition:all 0.15s;position:relative}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tab svg{display:inline-block;vertical-align:middle;margin-right:3px}
+.tdot{position:absolute;top:7px;right:calc(50% - 18px);width:7px;height:7px;border-radius:50%;background:var(--red);display:none}
+.tdot.show{display:block}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.main::-webkit-scrollbar{display:none}
+.screen{display:none;padding:14px;flex-direction:column;gap:10px}
+.screen.on{display:flex}
+.field{background:var(--bg1);border:1.5px solid var(--br);border-radius:14px;display:flex;align-items:center;gap:10px;padding:0 14px;height:56px;transition:border 0.15s}
+.field:focus-within{border-color:var(--blue2)}
+.field-icon{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+.field input{flex:1;background:none;border:none;outline:none;font-size:16px;color:var(--tx0);font-family:inherit}
+.field input::placeholder{color:var(--tx3)}
+.field-pre{font-size:20px;font-weight:700;color:var(--green);flex-shrink:0}
+.drv-grid{display:flex;flex-direction:column;gap:7px}
+.drv-card{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:14px;border:1.5px solid var(--br);background:var(--bg1);cursor:pointer;transition:all 0.12s;user-select:none}
+.drv-card:active{transform:scale(0.97)}
+.drv-card.sel{border-color:var(--blue);background:var(--blue-bg)}
+.drv-card.offline-card{opacity:0.4}
+.drv-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.drv-name{font-size:14px;font-weight:600;color:var(--tx0)}
+.drv-meta{font-size:11px;color:var(--tx2);margin-top:2px}
+.badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.bon{background:#0a2016;color:var(--green);border:1px solid #1a4a2e}
+.btrip{background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a}
+.boff{background:var(--bg3);color:var(--tx3);border:1px solid var(--br)}
+.chk{width:22px;height:22px;border-radius:50%;background:var(--blue2);display:none;align-items:center;justify-content:center;flex-shrink:0}
+.drv-card.sel .chk{display:flex}
+.dispatch-btn{width:100%;padding:18px;border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s}
+.dispatch-btn:active{transform:scale(0.97);background:#2560d0}
+.dispatch-btn:disabled{opacity:0.4;transform:none}
+.success-bar{background:#0a2016;border:1.5px solid var(--green);border-radius:12px;padding:12px 14px;display:none;align-items:center;gap:10px}
+.success-bar.show{display:flex}
+.sec-lbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px}
+.log-row{display:flex;gap:8px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--br);font-size:12px}
+.log-row:last-child{border-bottom:none}
+.fare-card{background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.fare-amt{font-size:22px;font-weight:700;color:var(--green);min-width:58px}
+.metric-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--bg1);border:1px solid var(--br);border-radius:12px;padding:12px}
+.mval{font-size:22px;font-weight:700}
+.mlbl{font-size:10px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:0.4px}
+.chat-drv{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--br);background:var(--bg1);cursor:pointer;margin-bottom:7px}
+.chat-drv.on{border-color:var(--blue);background:var(--blue-bg)}
+.chat-win{background:var(--bg1);border:1px solid var(--br);border-radius:14px;overflow:hidden;display:none;flex-direction:column}
+.chat-win.show{display:flex}
+.chat-hdr{padding:11px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:280px;min-height:100px}
+.msg{max-width:80%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.msg-me{background:var(--blue2);color:#fff;border-radius:12px 12px 3px 12px;align-self:flex-end}
+.msg-them{background:var(--bg3);color:var(--tx0);border-radius:12px 12px 12px 3px;align-self:flex-start}
+.msg-time{font-size:10px;opacity:0.5;margin-top:3px}
+.chat-bar{padding:10px 12px;border-top:1px solid var(--br);display:flex;gap:8px}
+.chat-bar input{flex:1;padding:10px 13px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:14px;color:var(--tx0);font-family:inherit;outline:none}
+.chat-bar input::placeholder{color:var(--tx3)}
+.chat-send{padding:10px 16px;background:var(--blue2);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.scard{background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:14px;margin-bottom:10px}
+.stitle{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.sinput{width:100%;padding:11px 13px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:14px;color:var(--tx0);font-family:inherit;outline:none;margin-bottom:8px}
+.sinput::placeholder{color:var(--tx3)}
+.sinput:focus{border-color:var(--blue2)}
+.sbtn{width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit}
+.drow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--br)}
+.drow:last-child{border-bottom:none}
+.rm-btn{padding:4px 10px;background:var(--red-bg);color:var(--red);border:1px solid #3d1515;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0}
+.auth-wrap{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:100;padding:80px 20px 40px}
+.auth-card{background:var(--bg1);border:1px solid var(--br);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;margin:0 auto;display:block}
+.auth-logo{width:56px;height:56px;background:var(--blue2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.auth-title{font-size:20px;font-weight:700;color:var(--tx0);text-align:center;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--tx2);text-align:center;margin-bottom:20px;line-height:1.5}
+.auth-input{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--br2);border-radius:12px;font-size:17px;color:var(--tx0);font-family:inherit;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;-webkit-user-select:text;user-select:text;-webkit-appearance:none;appearance:none}
+.auth-input:focus{border-color:var(--blue2)}
+.auth-input::placeholder{color:var(--tx3);letter-spacing:0}
+.auth-btn{width:100%;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;margin-bottom:8px;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:manipulation}
+.auth-btn:disabled{opacity:0.5}
+.otp-row{display:flex;gap:7px;justify-content:center;margin-bottom:12px}
+.otp-box{width:42px;height:50px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:20px;font-weight:700;color:var(--tx0);text-align:center;font-family:inherit;outline:none}
+.otp-box:focus{border-color:var(--blue2)}
+#recaptcha-container{display:flex;justify-content:center;margin-bottom:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;white-space:nowrap;border:1px solid;display:none}
+.tok{background:var(--green-bg);color:var(--green);border-color:#1a4a2e}
+.terr{background:var(--red-bg);color:var(--red);border-color:#3d1515}
+.tinfo{background:#1a2540;color:var(--blue);border-color:#2d4a80}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.msg-sender{font-size:10px;color:var(--tx2);margin-bottom:3px;font-weight:600}
+.zone-badge{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:6px;font-size:13px;font-weight:700;padding:0 6px;background:#1a2e50;color:#4e8ef7;border:1px solid #2d4a70;flex-shrink:0;letter-spacing:0.5px}
+.zone-badge.zB{background:#1a2e14;color:#3ec97a;border-color:#2a4a24}
+.zone-badge.zW{background:#1a1a40;color:#6060f0;border-color:#2a2a60}
+.zone-badge.zU{background:#2a1a08;color:#f5a623;border-color:#4a3010}
+.zone-badge.zX{background:#2a1a2a;color:#c060d0;border-color:#4a2a4a}
+.queue-card{background:#111827;border:1px solid #1e2a3a;border-radius:14px;overflow:hidden}
+.queue-hdr{padding:10px 14px;border-bottom:1px solid #1e2a3a;display:flex;align-items:center;gap:8px}
+.queue-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #1e2a3a}
+.queue-item:last-child{border-bottom:none}
+.queue-pos{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.pos-1{background:#2a2000;color:#f5c518;border:1px solid #4a3a00}
+.pos-2{background:#1a1a24;color:#b0b8d0;border:1px solid #2e3548}
+.pos-3{background:#1a1208;color:#cd7f32;border:1px solid #3a2a10}
+.pos-n{background:#1a1e28;color:#4a5270;border:1px solid #2e3548}
+</style>
+</head>
+<body>
+
+<div class="auth-wrap" id="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg></div>
+    <div class="auth-title">Dispatch HQ</div>
+    <div id="ap-phone">
+      <div class="auth-sub">Enter your phone number</div>
+      <input class="auth-input" type="tel" id="phone-input" placeholder="+1 718 555 0000" inputmode="tel" autocomplete="tel" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <div id="recaptcha-container" style="display:none"></div>
+      <button class="auth-btn" id="btn-send" onclick="sendCode()">Send code</button>
+    </div>
+    <div id="ap-otp" style="display:none">
+      <div class="auth-sub">Code sent to <strong id="ph-shown" style="color:var(--tx0)"></strong></div>
+      <div class="otp-row">
+        <input class="otp-box" type="number" id="o0" oninput="oi(0)" onkeydown="ok(event,0)"/>
+        <input class="otp-box" type="number" id="o1" oninput="oi(1)" onkeydown="ok(event,1)"/>
+        <input class="otp-box" type="number" id="o2" oninput="oi(2)" onkeydown="ok(event,2)"/>
+        <input class="otp-box" type="number" id="o3" oninput="oi(3)" onkeydown="ok(event,3)"/>
+        <input class="otp-box" type="number" id="o4" oninput="oi(4)" onkeydown="ok(event,4)"/>
+        <input class="otp-box" type="number" id="o5" oninput="oi(5)" onkeydown="ok(event,5)"/>
+      </div>
+      <button class="auth-btn" id="btn-verify" onclick="verifyCode()">Verify</button>
+      <button style="background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;width:100%;padding:6px" onclick="backToPhone()">Use different number</button>
+    </div>
+    <div id="ap-profile" style="display:none">
+      <div class="auth-sub">Set up your profile</div>
+      <input class="sinput" type="text" id="disp-name" placeholder="Your name"/>
+      <select class="sinput" id="disp-role" style="appearance:none;-webkit-appearance:none"><option value="dispatcher">Dispatcher</option><option value="head_dispatcher">Head Dispatcher</option></select>
+      <button class="auth-btn" onclick="saveProfile()">Enter Dispatch</button>
+    </div>
+    <div id="ap-blocked" style="display:none;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🚫</div>
+      <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px">Access denied</div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Your number is not approved.</div>
+      <button class="auth-btn" style="background:var(--bg3);color:var(--tx2)" onclick="location.reload()">Try again</button>
+    </div>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg></div>
+    <span class="hdr-title">Izik Dispatch</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="online-badge"><div class="odot"></div><span id="online-cnt">0</span> online</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-bg);border:1.5px solid var(--blue2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);cursor:pointer" id="disp-av" onclick="showTab('settings')">D</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" id="tab-dispatch" onclick="showTab('dispatch')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>Dispatch
+  </button>
+  <button class="tab" id="tab-drivers" onclick="showTab('drivers')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Drivers
+  </button>
+  <button class="tab" id="tab-map" onclick="showTab('map')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Map
+  </button>
+  <button class="tab" id="tab-fares" onclick="showTab('fares')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Fares
+  </button>
+  <button class="tab" id="tab-msgs" onclick="showTab('msgs')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Msgs<div class="tdot" id="msg-dot"></div>
+  </button>
+  <button class="tab" id="tab-settings" onclick="showTab('settings')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>
+</div>
+
+<div class="main">
+
+  <!-- DISPATCH -->
+  <div class="screen on" id="sc-dispatch">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="field">
+        <span class="field-icon">📞</span>
+        <input type="tel" id="f-phone" placeholder="Client phone number" inputmode="tel"/>
+      </div>
+      <div class="field">
+        <span class="field-icon">📍</span>
+        <input type="text" id="f-pickup" placeholder="Pickup address"/>
+      </div>
+      <div class="field">
+        <span class="field-pre">$</span>
+        <input type="number" id="f-fare" placeholder="Fare amount" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <span class="field-icon">📝</span>
+        <input type="text" id="f-notes" placeholder="Notes (optional)"/>
+      </div>
+    </div>
+    <div>
+      <div class="sec-lbl">Select driver — tap to select, then dispatch</div>
+      <div class="drv-grid" id="dlist"></div>
+    </div>
+    <!-- Zone queues -->
+    <div id="queue-section">
+      <div class="sec-lbl">Zone queues — waiting line</div>
+      <div id="queue-display" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <button class="dispatch-btn" id="dispatch-btn" onclick="dispatchJob()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>Dispatch Job
+    </button>
+    <div class="success-bar" id="success-bar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ec97a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <div><div style="font-size:13px;font-weight:700;color:var(--green)">Job dispatched!</div><div style="font-size:11px;color:#3a7a50;margin-top:2px" id="success-detail"></div></div>
+    </div>
+    <div>
+      <div class="sec-lbl">Today's dispatches</div>
+      <div style="background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:2px 14px" id="dispatch-log">
+        <div style="text-align:center;padding:14px;color:var(--tx3);font-size:12px">No dispatches yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="screen" id="sc-map" style="padding:0;height:100%">
+    <div id="gmap" style="width:100%;height:calc(100vh - 98px)"></div>
+    <div style="position:absolute;top:108px;left:50%;transform:translateX(-50%);background:rgba(13,15,20,0.92);border:1px solid #1e2a3a;border-radius:24px;padding:6px 16px;font-size:12px;color:#b0b8d0;display:flex;gap:12px;align-items:center;z-index:5;pointer-events:none;white-space:nowrap" id="map-bar">
+      <span><strong id="map-online" style="color:#f0f2f8;font-size:14px">0</strong> online</span>
+      <span style="width:1px;height:14px;background:#2e3d55;display:inline-block"></span>
+      <span style="color:#f5a623" id="map-trip">0</span> on trip
+      <span style="width:1px;height:14px;background:#2e3d55;display:inline-block"></span>
+      <span style="font-size:10px;color:#4a5270" id="map-ping">connecting...</span>
+    </div>
+  </div>
+
+  <!-- DRIVERS -->
+  <div class="screen" id="sc-drivers">
+    <div style="display:flex;gap:7px">
+      <button onclick="setFilter('all',this)" id="df-all" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--blue2);background:var(--blue2);color:#fff;cursor:pointer;font-family:inherit">All</button>
+      <button onclick="setFilter('available',this)" id="df-avail" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit">Available</button>
+      <button onclick="setFilter('trip',this)" id="df-trip" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit">On trip</button>
+    </div>
+    <div class="drv-grid" id="dlist-drivers"></div>
+  </div>
+
+  <!-- FARES -->
+  <div class="screen" id="sc-fares">
+    <div class="metric-row">
+      <div class="metric"><div class="mval" style="color:var(--green)" id="m-total">$0</div><div class="mlbl">Total fares today</div></div>
+      <div class="metric"><div class="mval" style="color:var(--blue)" id="m-comm">$0</div><div class="mlbl">My commission</div></div>
+    </div>
+    <div class="metric-row">
+      <div class="metric"><div class="mval" id="m-trips">0</div><div class="mlbl">Trips today</div></div>
+      <div class="metric"><div class="mval" style="color:var(--amber)" id="m-avg">$0</div><div class="mlbl">Avg fare</div></div>
+    </div>
+    <div class="sec-lbl" style="margin-top:4px">Completed trips</div>
+    <div id="fare-feed"><div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No trips yet</div></div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="screen" id="sc-msgs">
+    <div class="sec-lbl">Tap driver to open chat</div>
+    <div id="chat-drv-list"></div>
+    <div class="chat-win" id="chat-win">
+      <div class="chat-hdr">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+        <span style="font-size:13px;font-weight:600;color:var(--tx0)" id="chat-drv-name">—</span>
+        <span style="font-size:10px;color:var(--tx2);margin-left:auto" id="chat-drv-status"></span>
+      </div>
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-bar">
+        <input type="text" id="chat-input" placeholder="Message driver..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+        <button class="chat-send" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="sc-settings">
+    <div class="scard">
+      <div class="stitle">Add driver manually</div>
+      <input class="sinput" id="s-drv-name" placeholder="Full name"/>
+      <input class="sinput" id="s-drv-phone" placeholder="Phone (+17185550000)"/>
+      <input class="sinput" id="s-drv-zone" placeholder="Zone (Brooklyn North)"/>
+      <input class="sinput" id="s-drv-vehicle" placeholder="Vehicle (Toyota Camry)"/>
+      <button class="sbtn" onclick="addDriver()">Add driver</button>
+    </div>
+    <div class="scard">
+      <div class="stitle">Driver roster</div>
+      <div id="s-roster"><div style="font-size:12px;color:var(--tx3)">Loading...</div></div>
+    </div>
+    <div class="scard">
+      <div class="stitle">Approved dispatchers</div>
+      <div id="s-disps" style="margin-bottom:10px"></div>
+      <input class="sinput" id="s-dn" placeholder="Name"/>
+      <input class="sinput" id="s-dp" placeholder="Phone (+17185550000)"/>
+      <button class="sbtn" onclick="addDispatcher()">Approve dispatcher</button>
+    </div>
+    <div class="scard">
+      <div class="stitle">Approved drivers</div>
+      <div id="s-adrvs" style="margin-bottom:10px"></div>
+      <input class="sinput" id="s-an" placeholder="Driver name"/>
+      <input class="sinput" id="s-ap" placeholder="Phone (+17185550000)"/>
+      <button class="sbtn" onclick="addApprDriver()">Approve driver</button>
+    </div>
+    <div class="scard">
+      <div class="stitle">Driver zones / hubs</div>
+      <div id="s-zones" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:7px;margin-bottom:8px">
+        <input class="sinput" id="s-zone-emoji" placeholder="Emoji (B, W, 👍)" style="flex:0.7;margin:0"/>
+        <input class="sinput" id="s-zone-name" placeholder="Zone name" style="flex:1.3;margin:0"/>
+      </div>
+      <button class="sbtn" onclick="addZone()" style="margin-top:8px">Add zone</button>
+    </div>
+    <div style="text-align:center;padding:10px 0 24px">
+      <button onclick="doSignOut()" style="background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;font-family:inherit;text-decoration:underline">Sign out</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function sendCode(){
+  if(window._sc){ window._sc(); return; }
+  // Module not loaded yet — retry after short delay
+  setTimeout(function(){ if(window._sc) window._sc(); }, 300);
+}
+function verifyCode(){
+  if(window._vc){ window._vc(); return; }
+  setTimeout(function(){ if(window._vc) window._vc(); }, 300);
+}
+function backToPhone(){if(window._bp)window._bp();}
+function oi(i){if(window._oi)window._oi(i);}
+function ok(e,i){if(window._ok)window._ok(e,i);}
+function saveProfile(){if(window._sp)window._sp();}
+function doSignOut(){if(window._so)window._so();}
+function showTab(t){if(window._st)window._st(t);}
+function dispatchJob(){if(window._dj)window._dj();}
+function sendMsg(){if(window._sm)window._sm();}
+function setFilter(f,el){if(window._sf)window._sf(f,el);}
+function addDriver(){if(window._ad)window._ad();}
+function addDispatcher(){if(window._adsp)window._adsp();}
+function addApprDriver(){if(window._aadr)window._aadr();}
+function selectDriver(uid){if(window._sel)window._sel(uid);}
+function openChat(uid){if(window._oc)window._oc(uid);}
+function removeDriver(uid){if(window._rd)window._rd(uid);}
+function removeDispatcher(k){if(window._rdsp)window._rdsp(k);}
+function removeApprDriver(k){if(window._radr)window._radr(k);}
+function addZone(){if(window.addZone)window.addZone();}
+function removeZone(k){if(window.removeZone)window.removeZone(k);}
+function reassignZone(uid){if(window.reassignZone)window.reassignZone(uid);}
+function dispatchToQueued(uid,name){if(window.dispatchToQueued)window.dispatchToQueued(uid,name);}
+</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut as fbSignOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getDatabase, ref, set, get, push, update, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+const app=initializeApp({apiKey:"AIzaSyDyfq2Cmj9LmMpY3FIJ8TuLHiQ7PYBQTys",authDomain:"izik-taxi-service.firebaseapp.com",databaseURL:"https://izik-taxi-service-default-rtdb.firebaseio.com",projectId:"izik-taxi-service",storageBucket:"izik-taxi-service.firebasestorage.app",messagingSenderId:"835965697791",appId:"1:835965697791:web:fa2830a4b400c0803656ca"});
+const auth=getAuth(app); const db=getDatabase(app);
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
+const AVS=[{bg:'#1a2e50',c:'#4e8ef7'},{bg:'#0d2a1e',c:'#3ec97a'},{bg:'#2a1e08',c:'#f5a623'},{bg:'#2a0e14',c:'#f06090'},{bg:'#1a1040',c:'#a080f0'},{bg:'#1a2010',c:'#80c040'},{bg:'#201a08',c:'#e0a020'},{bg:'#0a1a30',c:'#40a0f0'},{bg:'#200a20',c:'#c060d0'},{bg:'#0a2020',c:'#40d0c0'}];
+const ini=n=>(n||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+const av=i=>AVS[i%AVS.length];
+
+let dispatcher=null,drivers=[],fareFeed=[],selDriverId=null,dFilter='all';
+let chatDriverId=null,chatMessages={},unreadCounts={},dispatchLogs=[];
+let confirmationResult=null,_pi=null,_polling=false;
+
+const toast=(msg,cls='tok',dur=3000)=>{
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+cls;t.style.display='block';
+  clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',dur);
+};
+
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    const ws=await get(ref(db,'approved_dispatchers'));
+    const wl=ws.val()||{};const approved=Object.values(wl).map(e=>e.phone);
+    if(approved.length>0&&!approved.includes(user.phoneNumber)){
+      ['ap-phone','ap-otp','ap-profile'].forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('ap-blocked').style.display='block';
+      await fbSignOut(auth);return;
+    }
+    const snap=await get(ref(db,`dispatchers/${user.uid}`));
+    if(snap.exists()){
+      dispatcher={uid:user.uid,...snap.val()};
+      if(approved.length===0) await set(ref(db,`approved_dispatchers/${user.uid}`),{phone:user.phoneNumber,name:dispatcher.name,role:'super_admin',addedAt:new Date().toISOString()});
+      document.getElementById('auth-wrap').style.display='none';
+      const a=document.getElementById('disp-av');
+      if(a) a.textContent=(dispatcher.name||'D').charAt(0).toUpperCase();
+      startPoll();
+    } else {
+      ['ap-phone','ap-otp'].forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('ap-profile').style.display='block';
+    }
+  } else {
+    document.getElementById('auth-wrap').style.display='flex';
+  }
+});
+
+// Setup recaptcha immediately when module loads — don't wait for auth state
+setTimeout(setupRC, 500);
+
+// iOS PWA: attach events directly via addEventListener (onclick unreliable in standalone)
+function attachAuthListeners(){
+  const btnSend = document.getElementById('btn-send');
+  if(btnSend && !btnSend._bound) {
+    btnSend._bound = true;
+    btnSend.addEventListener('touchend', function(e){
+      e.preventDefault();
+      window._sc();
+    });
+    btnSend.addEventListener('click', function(e){
+      window._sc();
+    });
+  }
+  const btnVerify = document.getElementById('btn-verify');
+  if(btnVerify && !btnVerify._bound) {
+    btnVerify._bound = true;
+    btnVerify.addEventListener('touchend', function(e){
+      e.preventDefault();
+      window._vc();
+    });
+    btnVerify.addEventListener('click', function(){
+      window._vc();
+    });
+  }
+}
+document.addEventListener('DOMContentLoaded', attachAuthListeners);
+
+function setupRC(){
+  if(window._rcv) return;
+  try {
+    window._rcv = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => { window._rcv = null; setupRC(); }
+    });
+    window._rcv.render().catch(()=>{});
+  } catch(e) { console.warn('reCAPTCHA init error:', e); }
+}
+
+window._sc=async function(){
+  const p=document.getElementById('phone-input').value.trim();
+  if(!p){toast('Enter your phone number','terr');return;}
+  // Ensure recaptcha is ready
+  if(!window._rcv){
+    setupRC();
+    await new Promise(r=>setTimeout(r,800));
+  }
+  if(!window._rcv){toast('Please wait a moment and try again','terr');return;}
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';
+  try{
+    confirmationResult=await signInWithPhoneNumber(auth,p,window._rcv);
+    document.getElementById('ph-shown').textContent=p;
+    document.getElementById('ap-phone').style.display='none';
+    document.getElementById('ap-otp').style.display='block';
+    document.getElementById('o0').focus();
+    toast('Code sent!');
+  }catch(e){
+    console.error('SMS error:',e);
+    toast(e.message,'terr',6000);
+    btn.disabled=false;
+    btn.innerHTML='Send code';
+    // Reset recaptcha on error
+    window._rcv=null;
+    setupRC();
+  }
+};
+window._oi=function(i){const v=document.getElementById('o'+i).value;if(v.length>1)document.getElementById('o'+i).value=v.slice(-1);if(v&&i<5)document.getElementById('o'+(i+1)).focus();if(Array.from({length:6},(_,j)=>document.getElementById('o'+j).value).join('').length===6)window._vc();};
+window._ok=function(e,i){if(e.key==='Backspace'&&!document.getElementById('o'+i).value&&i>0)document.getElementById('o'+(i-1)).focus();};
+window._vc=async function(){
+  const code=Array.from({length:6},(_,i)=>document.getElementById('o'+i).value).join('');
+  if(code.length<6){toast('Enter the full code','terr');return;}
+  const btn=document.getElementById('btn-verify');btn.disabled=true;btn.innerHTML='Verifying...';
+  try{await confirmationResult.confirm(code);}catch(e){toast('Invalid code','terr');btn.disabled=false;btn.innerHTML='Verify';}
+};
+window._bp=function(){document.getElementById('ap-otp').style.display='none';document.getElementById('ap-phone').style.display='block';document.getElementById('btn-send').disabled=false;document.getElementById('btn-send').innerHTML='Send code';};
+window._sp=async function(){
+  const name=document.getElementById('disp-name').value.trim();
+  if(!name){toast('Enter your name','terr');return;}
+  const user=auth.currentUser;
+  await set(ref(db,`dispatchers/${user.uid}`),{uid:user.uid,name,role:document.getElementById('disp-role').value,phone:user.phoneNumber,createdAt:new Date().toISOString()});
+  location.reload();
+};
+window._so=async function(){await fbSignOut(auth);location.reload();};
+
+window._st=function(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  const tel=document.getElementById('tab-'+t);if(tel)tel.classList.add('on');
+  const sel=document.getElementById('sc-'+t);if(sel)sel.classList.add('on');
+  if(t==='msgs'){renderChatDrvList();document.getElementById('msg-dot').classList.remove('show');}
+  if(t==='settings')renderSettings();
+  if(t==='fares')renderFares();
+  if(t==='drivers')renderDriversTab();
+  if(t==='map'){initMapIfNeeded();renderDriversTab();}
+};
+
+let map=null,driverMarkers={};
+const AV_COLORS=[{bg:'#1a2e50',c:'#4e8ef7'},{bg:'#0d2a1e',c:'#3ec97a'},{bg:'#2a1e08',c:'#f5a623'},{bg:'#2a0e14',c:'#f06090'},{bg:'#1a1040',c:'#a080f0'},{bg:'#1a2010',c:'#80c040'},{bg:'#201a08',c:'#e0a020'},{bg:'#0a1a30',c:'#40a0f0'},{bg:'#200a20',c:'#c060d0'},{bg:'#0a2020',c:'#40d0c0'}];
+
+window.initMap=function(){
+  map=new google.maps.Map(document.getElementById('gmap'),{
+    center:{lat:40.7128,lng:-74.006},zoom:11,
+    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]}],
+    mapTypeControl:false,streetViewControl:false,fullscreenControl:false,
+    zoomControl:true
+  });
+};
+
+function initMapIfNeeded(){
+  if(map) { updateMapPins(); return; }
+  if(window.google&&window.google.maps){
+    window.initMap();
+    updateMapPins();
+  }
+}
+
+function updateMapPins(){
+  if(!map) return;
+  const onlineDrivers=drivers.filter(d=>d.active&&d.lat&&d.lng);
+  document.getElementById('map-online').textContent=drivers.filter(d=>d.status!=='offline').length;
+  document.getElementById('map-trip').textContent=drivers.filter(d=>d.status==='on trip').length;
+  document.getElementById('map-ping').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Remove pins for offline drivers
+  Object.keys(driverMarkers).forEach(uid=>{
+    if(!onlineDrivers.find(d=>(d.uid||d.id)===uid)){
+      driverMarkers[uid].setMap(null);
+      delete driverMarkers[uid];
+    }
+  });
+
+  onlineDrivers.forEach((d,i)=>{
+    const dKey=d.uid||d.id;
+    const pos={lat:d.lat,lng:d.lng};
+    const color=AV_COLORS[i%AV_COLORS.length];
+    if(driverMarkers[dKey]){
+      driverMarkers[dKey].setPosition(pos);
+    } else {
+      driverMarkers[dKey]=new google.maps.Marker({
+        position:pos,map,title:d.name||'Driver',
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:color.bg,fillOpacity:1,strokeColor:color.c,strokeWeight:2.5},
+        label:{text:ini(d.name||'?'),color:color.c,fontSize:'10px',fontWeight:'700'}
+      });
+      driverMarkers[dKey].addListener('click',()=>{
+        const info=new google.maps.InfoWindow({content:`<div style="font-family:-apple-system,sans-serif;padding:4px 6px"><strong>${d.name}</strong><br><span style="color:#666;font-size:12px">${d.status} · ${d.vehicle||'—'}</span></div>`});
+        info.open(map,driverMarkers[dKey]);
+      });
+    }
+  });
+}
+
+function startPoll(){
+  if(_pi) return;
+  loadZones();
+  loadQueues();
+
+  // Real-time listener for new completed trips (fares)
+  onValue(ref(db,'trips'), (snap) => {
+    const trData=snap.val();
+    if(!trData) return;
+    const all=[];
+    Object.values(trData).forEach(dt=>Object.values(dt).forEach(t=>all.push(t)));
+    all.sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt));
+    const seen=JSON.parse(sessionStorage.getItem('st')||'[]');
+    const isFirst=fareFeed.length===0&&seen.length===0;
+    const newOnes=all.filter(t=>!fareFeed.find(f=>f.id===t.id));
+    if(newOnes.length){
+      newOnes.forEach(t=>{
+        fareFeed.unshift({...t,time:new Date(t.completedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+        if(!seen.includes(t.id)&&!isFirst) toast('$'+t.fare.toFixed(2)+' fare from '+t.driverName,'tok');
+        seen.push(t.id);
+      });
+      sessionStorage.setItem('st',JSON.stringify(seen.slice(-200)));
+      updateMetrics();
+      const curTab=document.querySelector('.tab.on')?.id?.replace('tab-','');
+      if(curTab==='fares') renderFares();
+    }
+  });
+
+  // Real-time listener for all drivers
+  onValue(ref(db,'drivers'), (snap) => {
+    const drData=snap.val();
+    if(!drData) return;
+    drivers=Object.entries(drData).map(([key,d])=>({...d,uid:d.uid||key,id:key,status:d.onTrip?'on trip':d.active?'available':'offline'}));
+    document.getElementById('online-cnt').textContent=drivers.filter(d=>d.status!=='offline').length;
+    renderDListDispatch();
+    const curTab=document.querySelector('.tab.on')?.id?.replace('tab-','');
+    if(curTab==='map') updateMapPins();
+    if(curTab==='drivers') renderDriversTab();
+    if(curTab==='msgs') renderChatDrvList();
+  });
+
+  // Real-time queues listener
+  onValue(ref(db,'queues'), (snap) => {
+    queuesCache=snap.val()||{};
+    renderQueues();
+  });
+
+  // Poll remaining things (messages) every 5s
+  _pi=setInterval(poll,5000);
+  setTimeout(poll,800);
+}
+
+async function poll(){
+  if(_polling)return;_polling=true;
+  try{
+    // Drivers and trips now handled by real-time listeners above
+    // Poll queues
+    const qsnap=await get(ref(db,'queues'));
+    if(qsnap.val()!==null){queuesCache=qsnap.val()||{};renderQueues();}
+    if(chatDriverId){
+      const ms=await get(ref(db,`messages/${chatDriverId}`));
+      if(ms.val()){
+        const arr=Object.values(ms.val()).sort((a,b)=>a.ts-b.ts);
+        const prev=(chatMessages[chatDriverId]||[]).length;
+        chatMessages[chatDriverId]=arr;
+        if(arr.length>prev){
+          const curTab=document.querySelector('.tab.on')?.id?.replace('tab-','');
+          if(curTab==='msgs')renderChatWin();
+          else{unreadCounts[chatDriverId]=(unreadCounts[chatDriverId]||0)+(arr.length-prev);document.getElementById('msg-dot').classList.add('show');const last=arr[arr.length-1];if(last.from==='driver')toast(last.sender+': '+last.text.slice(0,40),'tinfo',4000);}
+        }
+      }
+    }
+  }catch(e){}
+  _polling=false;
+}
+
+function renderDListDispatch(){
+  const el=document.getElementById('dlist');if(!el)return;
+  const avail=drivers.filter(d=>d.status==='available');
+  const busy=drivers.filter(d=>d.status==='on trip');
+  const off=drivers.filter(d=>d.status==='offline');
+  const sorted=[...avail,...busy,...off];
+  if(!sorted.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No drivers registered yet</div>';return;}
+  el.innerHTML=sorted.map((d,i)=>{
+    const a=av(i);const dKey=d.uid||d.id;const isSel=selDriverId===dKey;const isOff=d.status==='offline';
+    const zoneDisplay=d.zoneEmoji||d.zone||'—';
+    const zoneName=d.zoneName||d.zone||'—';
+    return `<div class="drv-card ${isSel?'sel':''} ${isOff?'offline-card':''}" id="dc-${dKey}" onclick="selectDriver('${dKey}')">
+      <div class="zone-badge" title="${zoneName}" style="font-size:${zoneDisplay.length>2?'11px':'14px'}">${zoneDisplay}</div>
+      <div class="drv-av" style="background:${a.bg};color:${a.c};width:34px;height:34px;font-size:12px">${ini(d.name)}</div>
+      <div style="flex:1;min-width:0"><div class="drv-name">${d.name||'Driver'}</div><div class="drv-meta">${d.vehicle||'—'}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span>
+        <div class="chk"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._sel=function(uid){
+  selDriverId=uid;
+  document.querySelectorAll('.drv-card').forEach(el=>el.classList.remove('sel'));
+  const el=document.getElementById('dc-'+uid);if(el)el.classList.add('sel');
+  const d=drivers.find(x=>(x.uid||x.id)===uid);
+  toast((d?.name||'Driver')+' selected ✓','tok',1200);
+};
+
+let _dFilter='all';
+window._sf=function(f,el){
+  _dFilter=f;
+  ['df-all','df-avail','df-trip'].forEach(id=>{const b=document.getElementById(id);b.style.background='transparent';b.style.color='var(--tx2)';b.style.borderColor='var(--br2)';});
+  el.style.background='var(--blue2)';el.style.color='#fff';el.style.borderColor='var(--blue2)';
+  renderDriversTab();
+};
+
+function renderDriversTab(){
+  const el=document.getElementById('dlist-drivers');if(!el)return;
+  let list=drivers;
+  if(_dFilter==='available')list=drivers.filter(d=>d.status==='available');
+  if(_dFilter==='trip')list=drivers.filter(d=>d.status==='on trip');
+  if(!list.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No drivers ${_dFilter==='all'?'registered':_dFilter==='available'?'available':'on a trip'}</div>`;return;}
+  el.innerHTML=list.map((d,i)=>{
+    const a=av(i);const dKey=d.uid||d.id;
+    const zDisp=d.zoneEmoji||d.zone||'?';
+    const zName=d.zoneName||d.zone||'Unassigned';
+    return `<div class="drv-card">
+      <div class="zone-badge" style="font-size:${zDisp.length>2?'11px':'14px'}">${zDisp}</div>
+      <div class="drv-av" style="background:${a.bg};color:${a.c};width:34px;height:34px;font-size:12px">${ini(d.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="drv-name">${d.name||'Driver'}</div>
+        <div class="drv-meta">${d.phone||'—'}</div>
+        <div class="drv-meta" style="color:var(--amber)">${zName}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <span class="badge ${d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff'}">${d.status}</span>
+        <button onclick="event.stopPropagation();reassignZone('${dKey}')" style="font-size:10px;padding:3px 8px;background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a;border-radius:6px;cursor:pointer;font-family:inherit">Zone</button>
+        <button onclick="event.stopPropagation();openChat('${dKey}');window._st('msgs')" style="font-size:10px;padding:3px 8px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;cursor:pointer;font-family:inherit">Msg</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._dj=async function(){
+  const phone=document.getElementById('f-phone').value.trim();
+  const pickup=document.getElementById('f-pickup').value.trim();
+  const fare=document.getElementById('f-fare').value.trim();
+  const notes=document.getElementById('f-notes').value.trim();
+  if(!phone){toast('Enter client phone','terr');return;}
+  if(!pickup){toast('Enter pickup address','terr');return;}
+  if(!selDriverId){toast('Select a driver first','terr');return;}
+  const driver=drivers.find(d=>d.uid===selDriverId||d.id===selDriverId);
+  if(!driver){toast('Driver not found','terr');return;}
+  const fKey=driver.id||driver.uid;
+  const btn=document.getElementById('dispatch-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';
+  try{
+    await set(ref(db,`jobs/${fKey}`),{phone,pickup,fare:parseFloat(fare)||0,notes,status:'pending',dispatchedAt:new Date().toISOString(),dispatchedTo:driver.name,dispatchedBy:dispatcher?.name||'Dispatch'});
+    // Remove driver from all queues when dispatched
+    const qsnap=await get(ref(db,'queues'));
+    const qdata=qsnap.val()||{};
+    for(const [qKey,qDrivers] of Object.entries(qdata)){
+      if(qDrivers&&qDrivers[fKey]) await remove(ref(db,`queues/${qKey}/${fKey}`));
+    }
+    const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    dispatchLogs.unshift({t,driver:driver.name,pickup,fare,phone});
+    renderLog();
+    document.getElementById('success-detail').textContent=`${driver.name} · ${pickup}${fare?' · $'+fare:''}`;
+    const sb=document.getElementById('success-bar');sb.classList.add('show');
+    ['f-phone','f-pickup','f-fare','f-notes'].forEach(id=>document.getElementById(id).value='');
+    selDriverId=null;renderDListDispatch();
+    toast('Job sent to '+driver.name+'!','tok');
+    setTimeout(()=>sb.classList.remove('show'),5000);
+  }catch(e){toast('Failed: '+e.message,'terr',5000);}
+  finally{btn.disabled=false;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> Dispatch Job';}
+};
+
+function renderLog(){
+  const el=document.getElementById('dispatch-log');
+  el.innerHTML=dispatchLogs.length
+    ?dispatchLogs.map(l=>`<div class="log-row"><span style="color:var(--tx3);font-size:10px;flex-shrink:0;margin-top:1px">${l.t}</span><div style="flex:1"><span style="color:var(--green);font-weight:600">${l.driver}</span> <span style="color:var(--tx2)">· ${l.pickup}${l.fare?' · $'+l.fare:''}</span></div></div>`).join('')
+    :'<div style="text-align:center;padding:14px;color:var(--tx3);font-size:12px">No dispatches yet</div>';
+}
+
+function updateMetrics(){
+  const today=new Date().toDateString();
+  const tf=fareFeed.filter(f=>new Date(f.completedAt).toDateString()===today);
+  const total=tf.reduce((s,f)=>s+f.fare,0);
+  const comm=tf.reduce((s,f)=>s+(f.commission||0),0);
+  const avg=tf.length?total/tf.length:0;
+  document.getElementById('m-total').textContent='$'+total.toFixed(0);
+  document.getElementById('m-comm').textContent='$'+comm.toFixed(0);
+  document.getElementById('m-trips').textContent=tf.length;
+  document.getElementById('m-avg').textContent='$'+avg.toFixed(0);
+}
+
+function renderFares(){
+  updateMetrics();
+  const el=document.getElementById('fare-feed');
+  if(!fareFeed.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No completed trips yet</div>';return;}
+  el.innerHTML=fareFeed.slice(0,30).map(f=>`<div class="fare-card">
+    <div><div class="fare-amt">$${f.fare.toFixed(2)}</div><div style="font-size:10px;color:var(--red);font-weight:600">$${(f.commission||0).toFixed(2)} comm</div></div>
+    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx0)">${f.driverName}</div><div style="font-size:11px;color:var(--tx2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.pickup}</div>${f.toll>0?`<div style="font-size:10px;color:var(--amber)">toll $${f.toll.toFixed(2)}</div>`:''}</div>
+    <div style="font-size:10px;color:var(--tx3)">${f.time}</div>
+  </div>`).join('');
+}
+
+function renderChatDrvList(){
+  const el=document.getElementById('chat-drv-list');if(!el)return;
+  if(!drivers.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3);padding:8px 0">No drivers yet</div>';return;}
+  el.innerHTML=drivers.map((d,i)=>{
+    const a=av(i);const dKey=d.uid||d.id;const unread=unreadCounts[dKey]||0;
+    return `<div class="chat-drv ${chatDriverId===dKey?'on':''}" onclick="openChat('${dKey}')">
+      <div class="drv-av" style="width:34px;height:34px;font-size:11px;background:${a.bg};color:${a.c}">${ini(d.name)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--tx0)">${d.name||'Driver'}</div><div style="font-size:11px;color:var(--tx2)">${d.status}</div></div>
+      ${unread?`<div style="width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">${unread}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+window._oc=async function(uid){
+  chatDriverId=uid;unreadCounts[uid]=0;
+  const d=drivers.find(x=>(x.uid||x.id)===uid);
+  document.getElementById('chat-drv-name').textContent=d?.name||'Driver';
+  document.getElementById('chat-drv-status').textContent=d?.status||'';
+  document.getElementById('chat-win').classList.add('show');
+  renderChatDrvList();
+  try{const ms=await get(ref(db,`messages/${uid}`));chatMessages[uid]=ms.val()?Object.values(ms.val()).sort((a,b)=>a.ts-b.ts):[];renderChatWin();}
+  catch(e){chatMessages[uid]=[];renderChatWin();}
+};
+
+function renderChatWin(){
+  const msgs=chatMessages[chatDriverId]||[];
+  const el=document.getElementById('chat-msgs');
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:12px">No messages yet.</div>';return;}
+  el.innerHTML=msgs.map(m=>{
+    const isMe=m.from==='dispatch';
+    const time=new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return `<div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'}">
+      ${!isMe?`<div class="msg-sender">${m.sender||'Driver'}</div>`:''}
+      <div class="msg ${isMe?'msg-me':'msg-them'}">${m.text}<div class="msg-time">${time}</div></div>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+window._sm=async function(){
+  const input=document.getElementById('chat-input');const text=(input.value||'').trim();
+  if(!text||!chatDriverId){toast('Select a driver and type a message','terr');return;}
+  input.value='';
+  const msg={text,from:'dispatch',sender:dispatcher?.name||'Dispatch',ts:Date.now()};
+  if(!chatMessages[chatDriverId])chatMessages[chatDriverId]=[];
+  chatMessages[chatDriverId].push(msg);renderChatWin();
+  try{await push(ref(db,`messages/${chatDriverId}`),msg);}catch(e){toast('Failed','terr');}
+};
+
+let zonesCache=[];
+
+async function loadZones(){
+  try{
+    const snap=await get(ref(db,'zones'));
+    const data=snap.val()||{};
+    zonesCache=Object.entries(data).map(([key,z])=>({key,...z}));
+    // Default zones if none exist
+    if(!zonesCache.length){
+      const defaults=[{emoji:'B',name:'Borough Park'},{emoji:'W',name:'Williamsburg'},{emoji:'👍',name:'Upstate'}];
+      for(const z of defaults){
+        const k='zone_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+        await set(ref(db,`zones/${k}`),z);
+      }
+      const snap2=await get(ref(db,'zones'));
+      zonesCache=Object.entries(snap2.val()||{}).map(([key,z])=>({key,...z}));
+    }
+  }catch(e){}
+  return zonesCache;
+}
+
+let queuesCache={};
+
+async function loadQueues(){
+  try{
+    const snap=await get(ref(db,'queues'));
+    queuesCache=snap.val()||{};
+    renderQueues();
+  }catch(e){}
+}
+
+function renderQueues(){
+  const el=document.getElementById('queue-display');
+  if(!el) return;
+  const entries=Object.entries(queuesCache);
+  if(!entries.length){
+    el.innerHTML='<div style="text-align:center;padding:12px;color:var(--tx3);font-size:12px">No drivers in any queue yet</div>';
+    return;
+  }
+  el.innerHTML=entries.map(([qKey,drivers])=>{
+    const zoneName=qKey.replace('queue_','').replace(/_/g,' ');
+    const sorted=Object.values(drivers||{}).sort((a,b)=>a.joinedAt-b.joinedAt);
+    if(!sorted.length) return '';
+    return `<div class="queue-card">
+      <div class="queue-hdr">
+        <span style="font-size:14px;font-weight:700;color:var(--tx0)">${zoneName.charAt(0).toUpperCase()+zoneName.slice(1)}</span>
+        <span style="font-size:11px;color:var(--tx2);margin-left:auto">${sorted.length} waiting</span>
+      </div>
+      ${sorted.map((d,i)=>{
+        const pos=i+1;
+        const posClass=pos===1?'pos-1':pos===2?'pos-2':pos===3?'pos-3':'pos-n';
+        const posLabel=pos===1?'1st':pos===2?'2nd':pos===3?'3rd':pos+'th';
+        const waitMin=Math.floor((Date.now()-d.joinedAt)/60000);
+        const waitStr=waitMin<1?'just now':waitMin+'m ago';
+        return `<div class="queue-item">
+          <div class="queue-pos ${posClass}">${pos}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--tx0)">${d.name||'Driver'}</div>
+            <div style="font-size:10px;color:var(--tx2)">${d.vehicle||'—'} · joined ${waitStr}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span style="font-size:11px;font-weight:700;color:${pos===1?'#f5c518':pos===2?'var(--tx2)':'#cd7f32'}">${posLabel}</span>
+            <button onclick="dispatchToQueued('${d.uid}','${d.name}')" style="padding:3px 8px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:600">Select</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).filter(Boolean).join('');
+}
+
+window.dispatchToQueued=function(uid,name){
+  // Select this driver and scroll to form
+  window._sel(uid);
+  document.getElementById('f-phone').focus();
+  toast(name+' selected — fill in job details','tinfo',3000);
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.addZone=async function(){
+  const emoji=document.getElementById('s-zone-emoji').value.trim();
+  const name=document.getElementById('s-zone-name').value.trim();
+  if(!emoji||!name){toast('Emoji and name required','terr');return;}
+  await set(ref(db,`zones/zone_${Date.now()}`),{emoji,name});
+  document.getElementById('s-zone-emoji').value='';
+  document.getElementById('s-zone-name').value='';
+  toast(emoji+' '+name+' added','tok');
+  renderSettings();
+  await loadZones();
+};
+
+window.removeZone=async function(key){
+  if(!confirm('Remove this zone?'))return;
+  await remove(ref(db,`zones/${key}`));
+  toast('Zone removed','tok');
+  renderSettings();
+  await loadZones();
+};
+
+window.reassignZone=async function(driverUid){
+  await loadZones();
+  if(!zonesCache.length){toast('No zones set up yet — add zones in Settings','terr');return;}
+  const options=zonesCache.map((z,i)=>`${i+1}. ${z.emoji} ${z.name}`).join('
+');
+  const choice=prompt('Assign zone to driver:
+
+'+options+'
+
+Enter number:');
+  if(!choice) return;
+  const idx=parseInt(choice)-1;
+  if(isNaN(idx)||!zonesCache[idx]){toast('Invalid choice','terr');return;}
+  const zone=zonesCache[idx];
+  try{
+    await update(ref(db,`drivers/${driverUid}`),{zone:zone.name,zoneEmoji:zone.emoji,zoneName:zone.name});
+    toast('Zone updated to '+zone.emoji+' '+zone.name,'tok');
+    setTimeout(poll,500);
+  }catch(e){toast('Failed','terr');}
+};
+
+function renderSettings(){
+  // Render zones
+  get(ref(db,'zones')).then(snap=>{
+    const data=snap.val()||{};
+    const entries=Object.entries(data);
+    zonesCache=entries.map(([key,z])=>({key,...z}));
+    const el=document.getElementById('s-zones');
+    if(!el) return;
+    if(!entries.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3);padding:4px 0">No zones yet — add below. Default zones will be created automatically.</div>';return;}
+    el.innerHTML=entries.map(([key,z])=>`<div class="drow">
+      <div style="font-size:18px;width:30px;text-align:center">${z.emoji}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--tx0)">${z.name}</div></div>
+      <button class="rm-btn" onclick="removeZone('${key}')">Remove</button>
+    </div>`).join('');
+  });
+
+  get(ref(db,'drivers')).then(snap=>{
+    const data=snap.val()||{};const entries=Object.entries(data);
+    document.getElementById('s-roster').innerHTML=entries.length
+      ?entries.map(([key,d],i)=>{const a=av(i);return `<div class="drow"><div class="drv-av" style="width:30px;height:30px;font-size:10px;background:${a.bg};color:${a.c}">${ini(d.name)}</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name||'—'}</div><div style="font-size:10px;color:var(--tx2)">${d.phone||'—'}</div></div><button class="rm-btn" onclick="removeDriver('${key}')">Remove</button></div>`;}).join('')
+      :'<div style="font-size:12px;color:var(--tx3);padding:6px 0">No drivers yet</div>';
+  });
+  get(ref(db,'approved_dispatchers')).then(snap=>{
+    const data=snap.val()||{};
+    document.getElementById('s-disps').innerHTML=Object.entries(data).map(([k,d])=>`<div class="drow"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name}</div><div style="font-size:10px;color:var(--tx2)">${d.phone}</div></div><button class="rm-btn" onclick="removeDispatcher('${k}')">Remove</button></div>`).join('')||'<div style="font-size:12px;color:var(--tx3);padding:4px 0">None</div>';
+  });
+  get(ref(db,'approved_drivers')).then(snap=>{
+    const data=snap.val()||{};
+    document.getElementById('s-adrvs').innerHTML=Object.entries(data).map(([k,d])=>`<div class="drow"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">${d.name}</div><div style="font-size:10px;color:var(--tx2)">${d.phone}</div></div><button class="rm-btn" onclick="removeApprDriver('${k}')">Remove</button></div>`).join('')||'<div style="font-size:12px;color:var(--tx3);padding:4px 0">None</div>';
+  });
+}
+
+window._ad=async function(){
+  const name=document.getElementById('s-drv-name').value.trim();const phone=document.getElementById('s-drv-phone').value.trim();
+  if(!name||!phone){toast('Name and phone required','terr');return;}
+  const uid='manual_'+Date.now();
+  await set(ref(db,`drivers/${uid}`),{uid,name,phone,zone:document.getElementById('s-drv-zone').value||'Unassigned',vehicle:document.getElementById('s-drv-vehicle').value||'—',active:false,onTrip:false,createdAt:new Date().toISOString()});
+  ['s-drv-name','s-drv-phone','s-drv-zone','s-drv-vehicle'].forEach(id=>document.getElementById(id).value='');
+  toast(name+' added','tok');renderSettings();
+};
+window._adsp=async function(){
+  const name=document.getElementById('s-dn').value.trim();const phone=document.getElementById('s-dp').value.trim();
+  if(!name||!phone){toast('Name and phone required','terr');return;}
+  if(!phone.startsWith('+')){toast('Phone must start with +','terr');return;}
+  await set(ref(db,`approved_dispatchers/disp_${Date.now()}`),{name,phone,addedAt:new Date().toISOString()});
+  document.getElementById('s-dn').value='';document.getElementById('s-dp').value='';
+  toast(name+' approved','tok');renderSettings();
+};
+window._aadr=async function(){
+  const name=document.getElementById('s-an').value.trim();const phone=document.getElementById('s-ap').value.trim();
+  if(!name||!phone){toast('Name and phone required','terr');return;}
+  if(!phone.startsWith('+')){toast('Phone must start with +','terr');return;}
+  await set(ref(db,`approved_drivers/drv_${Date.now()}`),{name,phone,addedAt:new Date().toISOString()});
+  document.getElementById('s-an').value='';document.getElementById('s-ap').value='';
+  toast(name+' approved as driver','tok');renderSettings();
+};
+window._rd=async function(uid){if(!confirm('Remove this driver?'))return;await remove(ref(db,`drivers/${uid}`));drivers=drivers.filter(d=>d.id!==uid&&d.uid!==uid);toast('Driver removed','tok');renderSettings();renderDListDispatch();};
+window._rdsp=async function(k){if(!confirm('Remove?'))return;await remove(ref(db,`approved_dispatchers/${k}`));toast('Removed','tok');renderSettings();};
+window._radr=async function(k){if(!confirm('Remove?'))return;await remove(ref(db,`approved_drivers/${k}`));toast('Removed','tok');renderSettings();};
+
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-dispatch.js').catch(()=>{});
+window.addEventListener('pageshow',()=>{if(dispatcher){renderDListDispatch();setTimeout(poll,300);}});
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoy6ZHvw5deft3lzjkJdMVH42e0SJV1eM&callback=initMap"></script>
+
+
+
+
+</body>
+</html>
