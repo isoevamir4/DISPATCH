@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IzikDispatch">
+<meta name="theme-color" content="#0d0f14">
+<link rel="manifest" href="manifest-dispatch.json">
+<link rel="apple-touch-icon" href="icon-dispatch.png">
+<title>Dispatch — Izik Taxi</title>
+<style>
+:root{--bg:#0d0f14;--bg1:#111827;--bg2:#1a1e28;--bg3:#222736;--br:#1e2a3a;--br2:#2e3d55;--tx0:#f0f2f8;--tx1:#b0b8d0;--tx2:#7a85a0;--tx3:#4a5270;--blue:#4e8ef7;--blue2:#2d6be4;--blue-bg:#1a2540;--green:#3ec97a;--green-bg:#0d2418;--amber:#f5a623;--amber-bg:#251a06;--red:#f05050;--red-bg:#1a0808;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* AUTH */
+#auth-page{position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:60px 20px 40px;display:flex;align-items:flex-start;justify-content:center}
+.abox{background:var(--bg1);border:1px solid var(--br);border-radius:20px;padding:28px 24px;width:100%;max-width:360px}
+.alogo{width:56px;height:56px;background:var(--blue2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.atitle{font-size:20px;font-weight:700;color:var(--tx0);text-align:center;margin-bottom:6px}
+.asub{font-size:13px;color:var(--tx2);text-align:center;margin-bottom:20px;line-height:1.5}
+.ainp{width:100%;padding:14px 16px;background:var(--bg2);border:1.5px solid var(--br2);border-radius:12px;font-size:17px;color:var(--tx0);font-family:inherit;outline:none;text-align:center;letter-spacing:2px;margin-bottom:12px;-webkit-appearance:none;-webkit-user-select:text;user-select:text}
+.ainp::placeholder{color:var(--tx3);letter-spacing:0}
+.ainp:focus{border-color:var(--blue2)}
+.abtn{display:block;width:100%;padding:15px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;margin-bottom:10px;touch-action:manipulation}
+.abtn:disabled{opacity:0.5}
+.aghost{background:none;border:none;color:var(--tx3);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:6px;display:block;margin:0 auto;touch-action:manipulation}
+.otp-row{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.obox{width:44px;height:52px;background:var(--bg2);border:1.5px solid var(--br2);border-radius:10px;font-size:22px;font-weight:700;color:var(--tx0);text-align:center;font-family:inherit;outline:none;-webkit-user-select:text;user-select:text;-webkit-appearance:none}
+.obox:focus{border-color:var(--blue2)}
+
+/* APP CHROME */
+.hdr{background:var(--bg1);border-bottom:1px solid var(--br);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hlogo{width:28px;height:28px;background:var(--blue2);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.online-pill{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #1a4a2e}
+.odot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.tabs{display:flex;background:var(--bg1);border-bottom:1px solid var(--br);flex-shrink:0}
+.tab{flex:1;padding:11px 2px;text-align:center;font-size:10px;font-weight:600;color:var(--tx3);cursor:pointer;border:none;background:none;font-family:inherit;border-bottom:2px solid transparent;touch-action:manipulation;position:relative}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tdot{position:absolute;top:7px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--red);display:none}
+.tdot.show{display:block}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:14px;flex-direction:column;gap:10px}
+.screen.on{display:flex}
+
+/* FORM FIELDS */
+.field{background:var(--bg1);border:1.5px solid var(--br);border-radius:14px;display:flex;align-items:center;gap:10px;padding:0 14px;height:56px;transition:border 0.15s}
+.field:focus-within{border-color:var(--blue2)}
+.field input{flex:1;background:none;border:none;outline:none;font-size:16px;color:var(--tx0);font-family:inherit;-webkit-user-select:text;user-select:text}
+.field input::placeholder{color:var(--tx3)}
+.fpre{font-size:20px;font-weight:700;color:var(--green);flex-shrink:0}
+.ficon{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+
+/* DRIVER CARDS */
+.dcard{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:14px;border:1.5px solid var(--br);background:var(--bg1);cursor:pointer;touch-action:manipulation;user-select:none;margin-bottom:7px}
+.dcard.sel{border-color:var(--blue);background:var(--blue-bg)}
+.dcard.doff{opacity:0.4}
+.dav{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.zbadge{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:26px;border-radius:8px;font-weight:700;padding:0 6px;background:#1a2e50;color:#4e8ef7;border:1px solid #2d4a70;flex-shrink:0}
+.badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.bon{background:#0a2016;color:var(--green);border:1px solid #1a4a2e}
+.btrip{background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a}
+.boff{background:var(--bg3);color:var(--tx3);border:1px solid var(--br)}
+.chk{width:22px;height:22px;border-radius:50%;background:var(--blue2);display:none;align-items:center;justify-content:center;flex-shrink:0}
+.dcard.sel .chk{display:flex}
+
+/* BUTTONS */
+.dbtn{width:100%;padding:18px;border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation}
+.dbtn:disabled{opacity:0.4}
+.sbtn{width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;touch-action:manipulation}
+.rmbtn{padding:4px 10px;background:var(--red-bg);color:var(--red);border:1px solid #3d1515;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;touch-action:manipulation}
+
+/* MISC */
+.success-bar{background:#0a2016;border:1.5px solid var(--green);border-radius:12px;padding:12px 14px;display:none;align-items:center;gap:10px}
+.success-bar.show{display:flex}
+.scard{background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:14px;margin-bottom:10px}
+.stitle{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.sinput{width:100%;padding:11px 13px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:14px;color:var(--tx0);font-family:inherit;outline:none;margin-bottom:8px;-webkit-appearance:none;-webkit-user-select:text;user-select:text}
+.sinput::placeholder{color:var(--tx3)}
+.drow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--br)}
+.drow:last-child{border-bottom:none}
+.seclbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px}
+.logrow{display:flex;gap:8px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--br);font-size:12px}
+.logrow:last-child{border-bottom:none}
+.qcard{background:var(--bg1);border:1px solid var(--br);border-radius:14px;overflow:hidden;margin-bottom:8px}
+.qhdr{padding:10px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center}
+.qitem{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--br)}
+.qitem:last-child{border-bottom:none}
+.qpos{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.p1{background:#2a2000;color:#f5c518;border:1px solid #4a3a00}
+.p2{background:#1a1a24;color:#b0b8d0;border:1px solid #2e3548}
+.pn{background:#1a1e28;color:#4a5270;border:1px solid #2e3548}
+.metric-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.metric{background:var(--bg1);border:1px solid var(--br);border-radius:12px;padding:12px}
+.mval{font-size:22px;font-weight:700}
+.mlbl{font-size:10px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:0.4px}
+.fare-card{background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.chat-drv{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--br);background:var(--bg1);cursor:pointer;margin-bottom:7px;touch-action:manipulation}
+.chat-drv.on{border-color:var(--blue);background:var(--blue-bg)}
+.chat-win{background:var(--bg1);border:1px solid var(--br);border-radius:14px;overflow:hidden;display:none;flex-direction:column}
+.chat-win.show{display:flex}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:280px;min-height:100px}
+.msg{max-width:80%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.msg-me{background:var(--blue2);color:#fff;border-radius:12px 12px 3px 12px;align-self:flex-end}
+.msg-them{background:var(--bg3);color:var(--tx0);border-radius:12px 12px 12px 3px;align-self:flex-start}
+.msg-time{font-size:10px;opacity:0.5;margin-top:3px}
+.chat-bar{padding:10px 12px;border-top:1px solid var(--br);display:flex;gap:8px}
+.chat-bar input{flex:1;padding:10px 13px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:14px;color:var(--tx0);font-family:inherit;outline:none;-webkit-user-select:text;user-select:text}
+.csend{padding:10px 16px;background:var(--blue2);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation}
+.map-wrap{position:relative;height:calc(100vh - 100px)}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.rmetric{background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:14px}
+.rmlabel{font-size:10px;color:var(--tx2);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.rmval{font-size:22px;font-weight:700;color:var(--tx0)}
+.rmsub{font-size:10px;color:var(--tx3);margin-top:2px}
+.rcard{background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:16px;margin-bottom:14px}
+.rcard-title{font-size:12px;font-weight:600;color:var(--tx1);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.rtbl{width:100%;border-collapse:collapse;font-size:12px}
+.rtbl th{padding:8px 10px;text-align:left;font-weight:500;color:var(--tx2);border-bottom:1px solid var(--br);font-size:10px;text-transform:uppercase;letter-spacing:0.4px}
+.rtbl td{padding:10px 10px;border-bottom:1px solid var(--br);color:var(--tx1)}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl tr:hover td{background:var(--bg2)}
+.rbar-wrap{display:flex;align-items:flex-end;gap:6px;height:140px}
+.rbc{display:flex;flex-direction:column;align-items:center;flex:1;gap:3px}
+.rbar{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:height 0.4s}
+.card-owed-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--br);border-radius:0}
+.card-owed-row:last-child{border-bottom:none}
+.card-owed-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#1a2e50;color:var(--blue);border:1px solid #2d4a80}
+.cash-badge-sm{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#0d2418;color:var(--green);border:1px solid #1a4a2e}
+.rblbl{font-size:9px;color:var(--tx3)}
+.rbval{font-size:9px;color:var(--tx2)}
+.period-tabs{display:flex;gap:4px;margin-bottom:16px}
+.ptab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--br);background:transparent;color:var(--tx2);font-family:inherit;transition:all 0.12s;touch-action:manipulation}
+.ptab.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.rgrid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#gmap{width:100%;height:100%}
+.map-bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(13,15,20,0.92);border:1px solid #1e2a3a;border-radius:24px;padding:6px 16px;font-size:12px;color:#b0b8d0;display:flex;gap:12px;align-items:center;z-index:5;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;white-space:nowrap;border:1px solid;display:none}
+.tok{background:var(--green-bg);color:var(--green);border-color:#1a4a2e}
+.terr{background:var(--red-bg);color:var(--red);border-color:#3d1515}
+.tinfo{background:#1a2540;color:var(--blue);border-color:#2d4a80}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-page">
+  <div class="abox">
+    <div class="alogo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg></div>
+    <div class="atitle">Dispatch HQ</div>
+    <div id="step-phone">
+      <div class="asub">Enter your phone number</div>
+      <input class="ainp" type="tel" id="phone-inp" placeholder="+1 718 555 0000" inputmode="tel" autocomplete="tel" autocorrect="off" autocapitalize="off"/>
+      <div id="recap-wrap" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+      <button class="abtn" id="btn-send" onclick="doSend()">Send code</button>
+    </div>
+    <div id="step-otp" style="display:none">
+      <div class="asub">Code sent to <strong id="ph-shown" style="color:var(--tx0)"></strong></div>
+      <div class="otp-row">
+        <input class="obox" type="number" id="o0" oninput="onOtp(0)" onkeydown="onOtpKey(event,0)"/>
+        <input class="obox" type="number" id="o1" oninput="onOtp(1)" onkeydown="onOtpKey(event,1)"/>
+        <input class="obox" type="number" id="o2" oninput="onOtp(2)" onkeydown="onOtpKey(event,2)"/>
+        <input class="obox" type="number" id="o3" oninput="onOtp(3)" onkeydown="onOtpKey(event,3)"/>
+        <input class="obox" type="number" id="o4" oninput="onOtp(4)" onkeydown="onOtpKey(event,4)"/>
+        <input class="obox" type="number" id="o5" oninput="onOtp(5)" onkeydown="onOtpKey(event,5)"/>
+      </div>
+      <button class="abtn" id="btn-verify" onclick="doVerify()">Verify</button>
+      <button class="aghost" onclick="doBack()">Use different number</button>
+    </div>
+    <div id="step-profile" style="display:none">
+      <div class="asub">One more step — set your name</div>
+      <input class="sinput" id="prof-name" placeholder="Your name"/>
+      <select class="sinput" id="prof-role" style="appearance:none;-webkit-appearance:none"><option value="dispatcher">Dispatcher</option><option value="head_dispatcher">Head Dispatcher</option></select>
+      <button class="abtn" onclick="doSaveProfile()">Enter Dispatch</button>
+    </div>
+    <div id="step-blocked" style="display:none;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🚫</div>
+      <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px">Access denied</div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Your number is not approved.</div>
+      <button class="abtn" style="background:var(--bg3);color:var(--tx2)" onclick="location.reload()">Try again</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;flex-direction:column;height:100vh">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="hlogo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg></div>
+      <span style="font-size:16px;font-weight:700;color:var(--tx0)">Izik Dispatch</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="online-pill"><div class="odot"></div><span id="online-cnt">0</span> online</div>
+      <div id="disp-av" onclick="showTab('settings')" style="width:32px;height:32px;border-radius:50%;background:var(--blue-bg);border:1.5px solid var(--blue2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);cursor:pointer">?</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tab-dispatch" onclick="showTab('dispatch')">⚡ Dispatch</button>
+    <button class="tab" id="tab-drivers" onclick="showTab('drivers')">👥 Drivers</button>
+    <button class="tab" id="tab-map" onclick="showTab('map')">🗺 Map</button>
+    <button class="tab" id="tab-fares" onclick="showTab('fares')">💰 Fares</button>
+    <button class="tab" id="tab-msgs" onclick="showTab('msgs')">💬 Msgs<div class="tdot" id="msg-dot"></div></button>
+    <button class="tab" id="tab-settings" onclick="showTab('settings')">⚙️</button>
+  </div>
+  <div class="main">
+
+    <!-- DISPATCH TAB -->
+    <div class="screen on" id="sc-dispatch">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="field"><span class="ficon">📞</span><input type="tel" id="f-phone" placeholder="Client phone number" inputmode="tel"/></div>
+        <div class="field"><span class="ficon">📍</span><input type="text" id="f-pickup" placeholder="Pickup address"/></div>
+        <div class="field"><span class="fpre">$</span><input type="number" id="f-fare" placeholder="Fare amount" inputmode="decimal"/></div>
+        <div class="field"><span class="ficon">📝</span><input type="text" id="f-notes" placeholder="Notes (optional)"/></div>
+      </div>
+      <div class="seclbl">Select driver</div>
+      <div id="dlist"></div>
+      <div class="seclbl">Zone queues</div>
+      <div id="queue-display"><div style="text-align:center;padding:10px;color:var(--tx3);font-size:12px">No drivers in queue</div></div>
+      <button class="dbtn" id="dispatch-btn" onclick="doDispatch()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>Dispatch Job</button>
+      <div class="success-bar" id="success-bar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ec97a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><div style="font-size:13px;font-weight:700;color:var(--green)">Job dispatched!</div><div style="font-size:11px;color:#3a7a50;margin-top:2px" id="success-detail"></div></div></div>
+      <div class="seclbl">Today's dispatches</div>
+      <div style="background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:2px 14px" id="dispatch-log"><div style="text-align:center;padding:14px;color:var(--tx3);font-size:12px">No dispatches yet</div></div>
+    </div>
+
+    <!-- DRIVERS TAB -->
+    <div class="screen" id="sc-drivers">
+      <div style="display:flex;gap:7px">
+        <button onclick="setFilter('all',this)" id="df-all" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--blue2);background:var(--blue2);color:#fff;cursor:pointer;font-family:inherit;touch-action:manipulation">All</button>
+        <button onclick="setFilter('available',this)" id="df-av" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;touch-action:manipulation">Available</button>
+        <button onclick="setFilter('trip',this)" id="df-tr" style="flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--br2);background:transparent;color:var(--tx2);cursor:pointer;font-family:inherit;touch-action:manipulation">On trip</button>
+      </div>
+      <div id="dlist-drivers"></div>
+    </div>
+
+    <!-- MAP TAB -->
+    <div class="screen" id="sc-map" style="padding:0">
+      <div class="map-wrap">
+        <div id="gmap"></div>
+        <div class="map-bar"><strong id="map-on" style="color:#f0f2f8;font-size:14px">0</strong>&nbsp;online&nbsp;&nbsp;<span style="color:var(--amber)" id="map-trip">0</span>&nbsp;on trip&nbsp;&nbsp;<span style="font-size:10px;color:var(--tx3)" id="map-ping"></span></div>
+      </div>
+    </div>
+
+    <!-- FARES TAB -->
+    <div class="screen" id="sc-fares">
+      <div class="metric-row">
+        <div class="metric"><div class="mval" style="color:var(--green)" id="m-tot">$0</div><div class="mlbl">Total fares today</div></div>
+        <div class="metric"><div class="mval" style="color:var(--blue)" id="m-comm">$0</div><div class="mlbl">Commission</div></div>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div class="mval" id="m-trips">0</div><div class="mlbl">Trips today</div></div>
+        <div class="metric"><div class="mval" style="color:var(--amber)" id="m-avg">$0</div><div class="mlbl">Avg fare</div></div>
+      </div>
+      <div class="seclbl">Completed trips</div>
+      <div id="fare-feed"><div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No trips yet</div></div>
+    </div>
+
+    <!-- MESSAGES TAB -->
+    <div class="screen" id="sc-msgs">
+      <div class="seclbl">Tap driver to chat</div>
+      <div id="chat-drv-list"></div>
+      <div class="chat-win" id="chat-win">
+        <div style="padding:11px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+          <span style="font-size:13px;font-weight:600;color:var(--tx0)" id="chat-name">—</span>
+          <span style="font-size:10px;color:var(--tx2);margin-left:auto" id="chat-status"></span>
+        </div>
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="chat-bar">
+          <input type="text" id="chat-input" placeholder="Message driver..." onkeydown="if(event.key==='Enter')doSendMsg()"/>
+          <button class="csend" onclick="doSendMsg()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT TAB -->
+    <div class="screen" id="sc-report" style="overflow-y:auto;padding:16px">
+      <div class="period-tabs">
+        <button class="ptab on" onclick="setPeriod('daily',this)">Daily</button>
+        <button class="ptab" onclick="setPeriod('weekly',this)">Weekly</button>
+        <button class="ptab" onclick="setPeriod('monthly',this)">Monthly</button>
+      </div>
+      <div class="metric-grid" id="rep-metrics"></div>
+      <div class="rgrid2">
+        <div class="rcard"><div class="rcard-title">Revenue by day</div><div class="rbar-wrap" id="day-chart"></div></div>
+        <div class="rcard"><div class="rcard-title">Driver earnings</div><div class="rbar-wrap" id="drv-chart"></div></div>
+      </div>
+      <div class="rcard">
+        <div class="rcard-title">
+          <span>Driver performance breakdown</span>
+          <button class="sbtn" onclick="exportCSV()" style="width:auto;padding:5px 12px;font-size:11px">Export CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table class="rtbl" id="perf-tbl"></table></div>
+      </div>
+      <div class="rcard">
+        <div class="rcard-title">Recent completed trips</div>
+        <div id="recent-trips"><div style="font-size:12px;color:var(--tx3);padding:8px 0">No completed trips yet.</div></div>
+      </div>
+      <div class="rcard" id="card-owed-section" style="display:none">
+        <div class="rcard-title">
+          <span>💳 Card payments — dispatch owes drivers</span>
+          <span style="font-size:18px;font-weight:700;color:var(--blue)" id="card-owed-total">$0</span>
+        </div>
+        <div id="card-owed-list"><div style="font-size:12px;color:var(--tx3);padding:8px 0">No card trips yet.</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="screen" id="sc-settings">
+      <div class="scard">
+        <div class="stitle">Add driver</div>
+        <input class="sinput" id="s-dn" placeholder="Full name"/>
+        <input class="sinput" id="s-dp" placeholder="Phone (+17185550000)"/>
+        <input class="sinput" id="s-dz" placeholder="Zone"/>
+        <input class="sinput" id="s-dv" placeholder="Vehicle"/>
+        <button class="sbtn" onclick="doAddDriver()">Add driver</button>
+      </div>
+      <div class="scard">
+        <div class="stitle">Zones / hubs</div>
+        <div id="s-zones" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:7px;margin-bottom:8px">
+          <input class="sinput" id="s-ze" placeholder="Emoji / letter" style="flex:0.8;margin:0"/>
+          <input class="sinput" id="s-zn" placeholder="Zone name" style="flex:1.2;margin:0"/>
+        </div>
+        <button class="sbtn" onclick="doAddZone()" style="margin-top:8px">Add zone</button>
+      </div>
+      <div class="scard">
+        <div class="stitle">Driver roster</div>
+        <div id="s-roster"><div style="font-size:12px;color:var(--tx3)">Loading...</div></div>
+      </div>
+      <div class="scard">
+        <div class="stitle">Approved dispatchers</div>
+        <div id="s-disps" style="margin-bottom:10px"></div>
+        <input class="sinput" id="s-an" placeholder="Name"/>
+        <input class="sinput" id="s-ap" placeholder="Phone (+17185550000)"/>
+        <button class="sbtn" onclick="doAddDisp()">Approve dispatcher</button>
+      </div>
+      <div class="scard">
+        <div class="stitle">Approved drivers</div>
+        <div id="s-adrvs" style="margin-bottom:10px"></div>
+        <input class="sinput" id="s-adn" placeholder="Driver name"/>
+        <input class="sinput" id="s-adp" placeholder="Phone (+17185550000)"/>
+        <button class="sbtn" onclick="doAddApprDrv()">Approve driver</button>
+      </div>
+      <div style="text-align:center;padding:10px 0 24px">
+        <button onclick="doSignOut()" style="background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;font-family:inherit;text-decoration:underline;touch-action:manipulation">Sign out</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Firebase COMPAT SDK — loads as regular scripts, not modules
+     Works on ALL browsers including iOS PWA standalone mode
+     ═══════════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ── GLOBALS ──
+var auth, db, recapV, confirmResult, dispatcher;
+var drivers=[], fareFeed=[], selDrvId=null, chatDrvId=null;
+var chatMsgs={}, unread={}, logs=[], zones=[], queues={}, drvFilter='all';
+var gmap=null, markers={};
+
+var AVS=[{bg:'#1a2e50',c:'#4e8ef7'},{bg:'#0d2a1e',c:'#3ec97a'},{bg:'#2a1e08',c:'#f5a623'},{bg:'#2a0e14',c:'#f06090'},{bg:'#1a1040',c:'#a080f0'},{bg:'#1a2010',c:'#80c040'},{bg:'#201a08',c:'#e0a020'},{bg:'#0a1a30',c:'#40a0f0'},{bg:'#200a20',c:'#c060d0'},{bg:'#0a2020',c:'#40d0c0'}];
+
+function ini(n){return(n||'?').split(' ').map(function(x){return x[0];}).join('').toUpperCase().slice(0,2);}
+function av(i){return AVS[i%AVS.length];}
+function toast(msg,cls,dur){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(cls||'tok'); t.style.display='block';
+  clearTimeout(toast._t); toast._t=setTimeout(function(){t.style.display='none';},dur||3000);
+}
+function showStep(s){
+  ['phone','otp','profile','blocked'].forEach(function(x){
+    document.getElementById('step-'+x).style.display=x===s?'block':'none';
+  });
+}
+
+// ── FIREBASE INIT ──
+firebase.initializeApp({
+  apiKey:"AIzaSyDyfq2Cmj9LmMpY3FIJ8TuLHiQ7PYBQTys",
+  authDomain:"izik-taxi-service.firebaseapp.com",
+  databaseURL:"https://izik-taxi-service-default-rtdb.firebaseio.com",
+  projectId:"izik-taxi-service",
+  storageBucket:"izik-taxi-service.firebasestorage.app",
+  messagingSenderId:"835965697791",
+  appId:"1:835965697791:web:fa2830a4b400c0803656ca"
+});
+auth = firebase.auth();
+db   = firebase.database();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+
+// Setup invisible recaptcha immediately
+recapV = new firebase.auth.RecaptchaVerifier('recap-wrap', {
+  size: 'invisible',
+  callback: function(){}
+});
+
+// Auth state
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    document.getElementById('auth-page').style.display='flex';
+    return;
+  }
+  db.ref('approved_dispatchers').once('value').then(function(ws){
+    var wl=ws.val()||{};
+    var approved=Object.values(wl).map(function(e){return e.phone;});
+    if(approved.length>0 && approved.indexOf(user.phoneNumber)<0){
+      showStep('blocked');
+      auth.signOut();
+      return;
+    }
+    db.ref('dispatchers/'+user.uid).once('value').then(function(snap){
+      if(snap.exists()){
+        dispatcher=Object.assign({uid:user.uid},snap.val());
+        if(approved.length===0){
+          db.ref('approved_dispatchers/'+user.uid).set({phone:user.phoneNumber,name:dispatcher.name,role:'super_admin',addedAt:new Date().toISOString()});
+        }
+        document.getElementById('auth-page').style.display='none';
+        var app=document.getElementById('app');
+        app.style.display='flex';
+        var av2=document.getElementById('disp-av');
+        if(av2) av2.textContent=(dispatcher.name||'D').charAt(0).toUpperCase();
+        startListeners();
+        loadZones();
+      } else {
+        showStep('profile');
+      }
+    });
+  });
+});
+
+// ── SEND CODE ──
+function doSend(){
+  var p=document.getElementById('phone-inp').value.trim();
+  if(!p){toast('Enter your phone number','terr');return;}
+  var btn=document.getElementById('btn-send');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  auth.signInWithPhoneNumber(p, recapV).then(function(result){
+    confirmResult=result;
+    document.getElementById('ph-shown').textContent=p;
+    showStep('otp');
+    document.getElementById('o0').focus();
+    toast('Code sent!');
+    btn.disabled=false; btn.innerHTML='Send code';
+  }).catch(function(e){
+    toast(e.message,'terr',6000);
+    btn.disabled=false; btn.innerHTML='Send code';
+    recapV.clear();
+    recapV = new firebase.auth.RecaptchaVerifier('recap-wrap',{size:'invisible',callback:function(){}});
+  });
+}
+
+function onOtp(i){
+  var v=document.getElementById('o'+i).value;
+  if(v.length>1) document.getElementById('o'+i).value=v.slice(-1);
+  if(v&&i<5) document.getElementById('o'+(i+1)).focus();
+  var code=''; for(var j=0;j<6;j++) code+=document.getElementById('o'+j).value;
+  if(code.length===6) doVerify();
+}
+function onOtpKey(e,i){if(e.key==='Backspace'&&!document.getElementById('o'+i).value&&i>0)document.getElementById('o'+(i-1)).focus();}
+
+function doVerify(){
+  var code=''; for(var i=0;i<6;i++) code+=document.getElementById('o'+i).value;
+  if(code.length<6){toast('Enter full 6-digit code','terr');return;}
+  var btn=document.getElementById('btn-verify');
+  btn.disabled=true; btn.innerHTML='Verifying...';
+  confirmResult.confirm(code).catch(function(e){
+    toast('Invalid code','terr');
+    btn.disabled=false; btn.innerHTML='Verify';
+  });
+}
+
+function doBack(){
+  showStep('phone');
+  document.getElementById('btn-send').disabled=false;
+  document.getElementById('btn-send').innerHTML='Send code';
+}
+
+function doSaveProfile(){
+  var name=document.getElementById('prof-name').value.trim();
+  if(!name){toast('Enter your name','terr');return;}
+  var user=auth.currentUser;
+  db.ref('dispatchers/'+user.uid).set({uid:user.uid,name:name,role:document.getElementById('prof-role').value,phone:user.phoneNumber,createdAt:new Date().toISOString()}).then(function(){location.reload();});
+}
+
+function doSignOut(){auth.signOut().then(function(){location.reload();});}
+
+// ── TABS ──
+function showTab(t){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+  document.querySelectorAll('.screen').forEach(function(x){x.classList.remove('on');});
+  var tel=document.getElementById('tab-'+t); if(tel) tel.classList.add('on');
+  var sel=document.getElementById('sc-'+t); if(sel) sel.classList.add('on');
+  if(t==='msgs'){renderChatList();document.getElementById('msg-dot').classList.remove('show');}
+  if(t==='settings') renderSettings();
+  if(t==='fares') renderFares();
+  if(t==='report') renderReporting();
+  if(t==='drivers') renderDrvTab();
+  if(t==='map' && gmap) updatePins();
+}
+
+// ── REALTIME LISTENERS ──
+function startListeners(){
+  db.ref('drivers').on('value',function(snap){
+    var data=snap.val()||{};
+    drivers=Object.entries(data).map(function(e){
+      var d=e[1];
+      return Object.assign({},d,{uid:d.uid||e[0],id:e[0],status:d.onTrip?'on trip':d.active?'available':'offline'});
+    });
+    document.getElementById('online-cnt').textContent=drivers.filter(function(d){return d.status!=='offline';}).length;
+    renderDList();
+    if(gmap) updatePins();
+  });
+
+  db.ref('trips').on('value',function(snap){
+    var data=snap.val(); if(!data) return;
+    var all=[];
+    Object.values(data).forEach(function(dt){Object.values(dt).forEach(function(t){all.push(t);});});
+    all.sort(function(a,b){return new Date(b.completedAt)-new Date(a.completedAt);});
+    var seen=JSON.parse(sessionStorage.getItem('st')||'[]');
+    var first=fareFeed.length===0&&seen.length===0;
+    all.forEach(function(t){
+      if(!fareFeed.find(function(f){return f.id===t.id;})){
+        fareFeed.unshift(Object.assign({paymentType:'cash'},t,{time:new Date(t.completedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}));
+        if(!first&&seen.indexOf(t.id)<0) toast('$'+t.fare.toFixed(2)+' from '+t.driverName,'tok');
+        seen.push(t.id);
+      }
+    });
+    sessionStorage.setItem('st',JSON.stringify(seen.slice(-200)));
+    updateMetrics();
+  });
+
+  db.ref('queues').on('value',function(snap){
+    queues=snap.val()||{};
+    renderQueues();
+  });
+
+  // Poll messages every 4s
+  setInterval(function(){
+    if(!chatDrvId||!dispatcher) return;
+    db.ref('messages/'+chatDrvId).once('value').then(function(snap){
+      if(!snap.val()) return;
+      var arr=Object.values(snap.val()).sort(function(a,b){return a.ts-b.ts;});
+      var prev=(chatMsgs[chatDrvId]||[]).length;
+      chatMsgs[chatDrvId]=arr;
+      if(arr.length>prev){
+        var active=document.querySelector('.tab.on');
+        if(active&&active.id==='tab-msgs') renderChatWin();
+        else{
+          unread[chatDrvId]=(unread[chatDrvId]||0)+(arr.length-prev);
+          document.getElementById('msg-dot').classList.add('show');
+          var last=arr[arr.length-1];
+          if(last.from==='driver') toast(last.sender+': '+last.text.slice(0,40),'tinfo',4000);
+        }
+      }
+    });
+  },4000);
+}
+
+// ── DRIVER LIST ──
+function renderDList(){
+  var el=document.getElementById('dlist'); if(!el) return;
+  var avail=drivers.filter(function(d){return d.status==='available';});
+  var busy=drivers.filter(function(d){return d.status==='on trip';});
+  var off=drivers.filter(function(d){return d.status==='offline';});
+  var sorted=avail.concat(busy).concat(off);
+  if(!sorted.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No drivers yet</div>';return;}
+  el.innerHTML=sorted.map(function(d,i){
+    var a=av(i); var k=d.uid||d.id; var ze=d.zoneEmoji||d.zone||'?'; var isSel=selDrvId===k;
+    return '<div class="dcard'+(isSel?' sel':'')+(d.status==='offline'?' doff':'')+'" id="dc-'+k+'" onclick="selDrv(\''+k+'\')">'
+      +'<div class="zbadge" style="font-size:'+(ze.length>2?'11px':'15px')+'">'+ze+'</div>'
+      +'<div class="dav" style="background:'+a.bg+';color:'+a.c+'">'+ini(d.name)+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:var(--tx0)">'+d.name+'</div><div style="font-size:11px;color:var(--tx2)">'+(d.vehicle||'—')+'</div></div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">'
+      +'<span class="badge '+(d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff')+'">'+d.status+'</span>'
+      +'<div class="chk"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function selDrv(uid){
+  selDrvId=uid;
+  document.querySelectorAll('.dcard').forEach(function(el){el.classList.remove('sel');});
+  var el=document.getElementById('dc-'+uid); if(el) el.classList.add('sel');
+  var d=drivers.find(function(x){return (x.uid||x.id)===uid;});
+  toast((d?d.name:'Driver')+' selected ✓','tok',1200);
+}
+
+function renderDrvTab(){
+  var el=document.getElementById('dlist-drivers'); if(!el) return;
+  var list=drvFilter==='available'?drivers.filter(function(d){return d.status==='available';}):drvFilter==='trip'?drivers.filter(function(d){return d.status==='on trip';}):drivers;
+  if(!list.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No drivers</div>';return;}
+  el.innerHTML=list.map(function(d,i){
+    var a=av(i); var k=d.uid||d.id; var ze=d.zoneEmoji||d.zone||'?'; var zn=d.zoneName||d.zone||'—';
+    return '<div class="dcard">'
+      +'<div class="zbadge" style="font-size:'+(ze.length>2?'11px':'15px')+'">'+ze+'</div>'
+      +'<div class="dav" style="background:'+a.bg+';color:'+a.c+';width:34px;height:34px;font-size:11px">'+ini(d.name)+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:var(--tx0)">'+d.name+'</div><div style="font-size:11px;color:var(--tx2)">'+(d.phone||'—')+'</div><div style="font-size:11px;color:var(--amber)">'+zn+'</div></div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">'
+      +'<span class="badge '+(d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff')+'">'+d.status+'</span>'
+      +'<button onclick="event.stopPropagation();openChat(\''+k+'\');showTab(\'msgs\')" style="font-size:10px;padding:3px 8px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;cursor:pointer;font-family:inherit;touch-action:manipulation">Msg</button>'
+      +'<button onclick="event.stopPropagation();doReassign(\''+k+'\')" style="font-size:10px;padding:3px 8px;background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a;border-radius:6px;cursor:pointer;font-family:inherit;touch-action:manipulation">Zone</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function setFilter(f,el){
+  drvFilter=f;
+  ['df-all','df-av','df-tr'].forEach(function(id){var b=document.getElementById(id);b.style.background='transparent';b.style.color='var(--tx2)';b.style.borderColor='var(--br2)';});
+  el.style.background='var(--blue2)';el.style.color='#fff';el.style.borderColor='var(--blue2)';
+  renderDrvTab();
+}
+
+// ── DISPATCH ──
+function doDispatch(){
+  var phone=document.getElementById('f-phone').value.trim();
+  var pickup=document.getElementById('f-pickup').value.trim();
+  var fare=document.getElementById('f-fare').value.trim();
+  var notes=document.getElementById('f-notes').value.trim();
+  if(!phone){toast('Enter client phone','terr');return;}
+  if(!pickup){toast('Enter pickup address','terr');return;}
+  if(!selDrvId){toast('Select a driver first','terr');return;}
+  var drv=drivers.find(function(d){return d.uid===selDrvId||d.id===selDrvId;});
+  if(!drv){toast('Driver not found','terr');return;}
+  var k=drv.id||drv.uid;
+  var btn=document.getElementById('dispatch-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Sending...';
+  db.ref('jobs/'+k).set({
+    phone:phone,pickup:pickup,fare:parseFloat(fare)||0,notes:notes,
+    status:'pending',dispatchedAt:new Date().toISOString(),
+    dispatchedTo:drv.name,dispatchedBy:dispatcher?dispatcher.name:'Dispatch'
+  }).then(function(){
+    // Remove from queues
+    db.ref('queues').once('value').then(function(snap){
+      var qdata=snap.val()||{};
+      Object.keys(qdata).forEach(function(qk){if(qdata[qk]&&qdata[qk][k]) db.ref('queues/'+qk+'/'+k).remove();});
+    });
+    var t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    logs.unshift({t:t,name:drv.name,pickup:pickup,fare:fare});
+    renderLog();
+    document.getElementById('success-detail').textContent=drv.name+' · '+pickup+(fare?' · $'+fare:'');
+    var sb=document.getElementById('success-bar'); sb.classList.add('show');
+    ['f-phone','f-pickup','f-fare','f-notes'].forEach(function(id){document.getElementById(id).value='';});
+    selDrvId=null; renderDList();
+    toast('Job sent to '+drv.name+'!','tok');
+    setTimeout(function(){sb.classList.remove('show');},5000);
+  }).catch(function(e){toast('Failed: '+e.message,'terr',5000);})
+  .finally(function(){btn.disabled=false;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> Dispatch Job';});
+}
+
+function renderLog(){
+  var el=document.getElementById('dispatch-log');
+  el.innerHTML=logs.length?logs.map(function(l){return '<div class="logrow"><span style="color:var(--tx3);font-size:10px;flex-shrink:0">'+l.t+'</span><div style="flex:1"><span style="color:var(--green);font-weight:600">'+l.name+'</span> <span style="color:var(--tx2)">· '+l.pickup+(l.fare?' · $'+l.fare:'')+'</span></div></div>';}).join(''):'<div style="text-align:center;padding:14px;color:var(--tx3);font-size:12px">No dispatches yet</div>';
+}
+
+// ── QUEUES ──
+function renderQueues(){
+  var el=document.getElementById('queue-display'); if(!el) return;
+  var entries=Object.entries(queues).filter(function(e){return e[1]&&Object.keys(e[1]).length;});
+  if(!entries.length){el.innerHTML='<div style="text-align:center;padding:10px;color:var(--tx3);font-size:12px">No drivers in queue</div>';return;}
+  el.innerHTML=entries.map(function(entry){
+    var qk=entry[0],qd=entry[1];
+    var zname=qk.replace('queue_','').replace(/_/g,' ');
+    var sorted=Object.values(qd).sort(function(a,b){return a.joinedAt-b.joinedAt;});
+    return '<div class="qcard"><div class="qhdr"><span style="font-size:14px;font-weight:700;color:var(--tx0)">'+zname.charAt(0).toUpperCase()+zname.slice(1)+'</span><span style="font-size:11px;color:var(--tx2);margin-left:auto">'+sorted.length+' waiting</span></div>'
+      +sorted.map(function(d,i){
+        var pos=i+1; var pc=pos===1?'p1':pos===2?'p2':'pn'; var pl=pos===1?'1st':pos===2?'2nd':pos===3?'3rd':pos+'th';
+        var wm=Math.floor((Date.now()-d.joinedAt)/60000); var ws=wm<1?'just now':wm+'m ago';
+        return '<div class="qitem"><div class="qpos '+pc+'">'+pos+'</div>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx0)">'+d.name+'</div><div style="font-size:10px;color:var(--tx2)">'+(d.vehicle||'—')+' · '+ws+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
+          +'<span style="font-size:11px;font-weight:700;color:'+(pos===1?'#f5c518':'var(--tx2)')+'">'+pl+'</span>'
+          +'<button onclick="qSelect(\''+d.uid+'\',\''+d.name+'\')" style="padding:3px 8px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:600;touch-action:manipulation">Select</button>'
+          +'</div></div>';
+      }).join('')+'</div>';
+  }).join('');
+}
+
+function qSelect(uid,name){
+  selDrv(uid);
+  document.getElementById('f-phone').focus();
+  toast(name+' selected — fill job details','tinfo',3000);
+}
+
+// ── FARES ──
+function updateMetrics(){
+  var today=new Date().toDateString();
+  var tf=fareFeed.filter(function(f){return new Date(f.completedAt).toDateString()===today;});
+  var tot=tf.reduce(function(s,f){return s+f.fare;},0);
+  var comm=tf.reduce(function(s,f){return s+(f.commission||0);},0);
+  var avg=tf.length?tot/tf.length:0;
+  document.getElementById('m-tot').textContent='$'+tot.toFixed(0);
+  document.getElementById('m-comm').textContent='$'+comm.toFixed(0);
+  document.getElementById('m-trips').textContent=tf.length;
+  document.getElementById('m-avg').textContent='$'+avg.toFixed(0);
+}
+
+function renderFares(){
+  updateMetrics();
+  var el=document.getElementById('fare-feed');
+  if(!fareFeed.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No trips yet</div>';return;}
+  el.innerHTML=fareFeed.slice(0,30).map(function(f){
+    return '<div class="fare-card">'
+      +'<div><div style="font-size:22px;font-weight:700;color:var(--green)">$'+f.fare.toFixed(2)+'</div><div style="font-size:10px;color:var(--red);font-weight:600">$'+(f.commission||0).toFixed(2)+' comm</div></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx0)">'+f.driverName+'</div><div style="font-size:11px;color:var(--tx2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+f.pickup+'</div></div>'
+      +'<div style="font-size:10px;color:var(--tx3)">'+f.time+'</div></div>';
+  }).join('');
+}
+
+// ── MESSAGES ──
+function renderChatList(){
+  var el=document.getElementById('chat-drv-list'); if(!el) return;
+  if(!drivers.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3)">No drivers yet</div>';return;}
+  el.innerHTML=drivers.map(function(d,i){
+    var a=av(i); var k=d.uid||d.id; var u=unread[k]||0;
+    return '<div class="chat-drv'+(chatDrvId===k?' on':'')+'" onclick="openChat(\''+k+'\')">'
+      +'<div class="dav" style="width:34px;height:34px;font-size:11px;background:'+a.bg+';color:'+a.c+'">'+ini(d.name)+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--tx0)">'+d.name+'</div><div style="font-size:11px;color:var(--tx2)">'+d.status+'</div></div>'
+      +(u?'<div style="width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">'+u+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function openChat(uid){
+  chatDrvId=uid; unread[uid]=0;
+  var d=drivers.find(function(x){return (x.uid||x.id)===uid;});
+  document.getElementById('chat-name').textContent=d?d.name:'Driver';
+  document.getElementById('chat-status').textContent=d?d.status:'';
+  document.getElementById('chat-win').classList.add('show');
+  renderChatList();
+  db.ref('messages/'+uid).once('value').then(function(snap){
+    chatMsgs[uid]=snap.val()?Object.values(snap.val()).sort(function(a,b){return a.ts-b.ts;}):[];
+    renderChatWin();
+  });
+}
+
+function renderChatWin(){
+  var msgs=chatMsgs[chatDrvId]||[];
+  var el=document.getElementById('chat-msgs');
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx3);font-size:12px">No messages yet.</div>';return;}
+  el.innerHTML=msgs.map(function(m){
+    var isMe=m.from==='dispatch';
+    var time=new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return '<div style="display:flex;flex-direction:column;align-items:'+(isMe?'flex-end':'flex-start')+'">'
+      +(!isMe?'<div style="font-size:10px;color:var(--tx2);margin-bottom:3px;font-weight:600">'+(m.sender||'Driver')+'</div>':'')
+      +'<div class="msg '+(isMe?'msg-me':'msg-them')+'">'+m.text+'<div class="msg-time">'+time+'</div></div></div>';
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function doSendMsg(){
+  var inp=document.getElementById('chat-input');
+  var text=(inp.value||'').trim();
+  if(!text||!chatDrvId){toast('Select a driver first','terr');return;}
+  inp.value='';
+  var msg={text:text,from:'dispatch',sender:dispatcher?dispatcher.name:'Dispatch',ts:Date.now()};
+  if(!chatMsgs[chatDrvId]) chatMsgs[chatDrvId]=[];
+  chatMsgs[chatDrvId].push(msg); renderChatWin();
+  db.ref('messages/'+chatDrvId).push(msg).catch(function(){toast('Failed','terr');});
+}
+
+// ── ZONES ──
+function loadZones(){
+  db.ref('zones').once('value').then(function(snap){
+    var data=snap.val()||{};
+    zones=Object.entries(data).map(function(e){return Object.assign({key:e[0]},e[1]);});
+    if(!zones.length){
+      var defs=[{emoji:'B',name:'Borough Park'},{emoji:'W',name:'Williamsburg'},{emoji:'👍',name:'Upstate'}];
+      defs.forEach(function(z){db.ref('zones').push(z);});
+      setTimeout(loadZones,1000);
+    }
+  });
+}
+
+function doAddZone(){
+  var e=document.getElementById('s-ze').value.trim();
+  var n=document.getElementById('s-zn').value.trim();
+  if(!e||!n){toast('Both fields required','terr');return;}
+  db.ref('zones').push({emoji:e,name:n}).then(function(){
+    document.getElementById('s-ze').value='';
+    document.getElementById('s-zn').value='';
+    toast(e+' '+n+' added','tok');
+    loadZones(); renderSettings();
+  });
+}
+
+function doReassign(duid){
+  if(!zones.length){toast('No zones set up','terr');return;}
+  var opts=zones.map(function(z,i){return (i+1)+'. '+z.emoji+' '+z.name;}).join('\n');
+  var choice=prompt('Assign zone:\n\n'+opts+'\n\nEnter number:');
+  if(!choice) return;
+  var idx=parseInt(choice)-1;
+  if(isNaN(idx)||!zones[idx]){toast('Invalid choice','terr');return;}
+  var z=zones[idx];
+  db.ref('drivers/'+duid).update({zone:z.name,zoneEmoji:z.emoji,zoneName:z.name}).then(function(){toast('Zone updated to '+z.emoji+' '+z.name,'tok');});
+}
+
+// ── SETTINGS ──
+var curPeriod='weekly';
+var DAYS_R=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var BCOLS=['#4e8ef7','#3ec97a','#f5a623','#f06090','#a080f0'];
+
+function setPeriod(p,el){
+  curPeriod=p;
+  document.querySelectorAll('.ptab').forEach(function(x){x.classList.remove('on');});
+  el.classList.add('on');
+  renderReporting();
+}
+
+function renderReporting(){
+  // Pull real fare data from fareFeed
+  var tot=fareFeed.reduce(function(s,f){return s+f.fare;},0);
+  var totTrips=fareFeed.length;
+  // Build per-driver data from fareFeed
+  var driverData={};
+  fareFeed.forEach(function(f){
+    if(!driverData[f.driverName]) driverData[f.driverName]={name:f.driverName,total:0,trips:0,income:[0,0,0,0,0,0,0]};
+    driverData[f.driverName].total+=f.fare;
+    driverData[f.driverName].trips++;
+    var day=new Date(f.completedAt||Date.now()).getDay();
+    driverData[f.driverName].income[day===0?6:day-1]+=f.fare;
+  });
+  var driverList=Object.values(driverData);
+  var best=driverList.sort(function(a,b){return b.total-a.total;})[0];
+  var avgD=drivers.length&&totTrips?Math.round(tot/(drivers.length*7)):0;
+
+  document.getElementById('rep-metrics').innerHTML=
+    '<div class="rmetric"><div class="rmlabel">Total revenue</div><div class="rmval" style="color:var(--green)">$'+tot.toFixed(0)+'</div><div class="rmsub">'+curPeriod+'</div></div>'+
+    '<div class="rmetric"><div class="rmlabel">Total trips</div><div class="rmval">'+totTrips+'</div><div class="rmsub">all drivers</div></div>'+
+    '<div class="rmetric"><div class="rmlabel">Top driver</div><div class="rmval" style="color:var(--amber)">'+(best?best.name.split(' ')[0]:'—')+'</div><div class="rmsub">$'+(best?best.total.toFixed(0):0)+'</div></div>'+
+    '<div class="rmetric"><div class="rmlabel">Avg/driver/day</div><div class="rmval">$'+avgD+'</div><div class="rmsub">this week</div></div>';
+
+  // Day chart — from real fares
+  var dayTotals=[0,0,0,0,0,0,0];
+  fareFeed.forEach(function(f){
+    var day=new Date(f.completedAt||Date.now()).getDay();
+    dayTotals[day===0?6:day-1]+=f.fare;
+  });
+  var mxD=Math.max.apply(null,dayTotals.concat([1]));
+  document.getElementById('day-chart').innerHTML=dayTotals.map(function(v,i){
+    return '<div class="rbc"><div class="rbval">$'+Math.round(v)+'</div><div class="rbar" style="height:'+Math.round(v/mxD*128)+'px;background:'+(i===4?'var(--amber)':'var(--blue2)')+'"></div><div class="rblbl">'+DAYS_R[i]+'</div></div>';
+  }).join('');
+
+  // Driver earnings chart
+  var dT=drivers.map(function(d){return driverData[d.name]?driverData[d.name].total:0;});
+  var mxW=Math.max.apply(null,dT.concat([1]));
+  document.getElementById('drv-chart').innerHTML=drivers.map(function(d,i){
+    return '<div class="rbc"><div class="rbval">$'+Math.round(dT[i])+'</div><div class="rbar" style="height:'+Math.round(dT[i]/mxW*128)+'px;background:'+BCOLS[i%BCOLS.length]+'"></div><div class="rblbl">'+d.name.split(' ')[0]+'</div></div>';
+  }).join('');
+
+  // Performance table — real drivers from Firebase
+  var sorted=drivers.map(function(d,i){
+    var dd=driverData[d.name]||{total:0,trips:0,income:[0,0,0,0,0,0,0]};
+    return {d:d,dd:dd,i:i};
+  }).sort(function(a,b){return b.dd.total-a.dd.total;});
+
+  document.getElementById('perf-tbl').innerHTML='<thead><tr>'+
+    ['#','Driver','Zone','Vehicle','Mon','Tue','Wed','Thu','Fri','Sat','Sun','Total','Trips','Status'].map(function(h){return '<th>'+h+'</th>';}).join('')+
+    '</tr></thead><tbody>'+
+    sorted.map(function(row,rank){
+      var d=row.d; var dd=row.dd; var a=av(row.i); var wk=dd.total.toFixed(0);
+      return '<tr><td style="color:var(--tx3)">'+(rank+1)+'</td>'+
+        '<td><div style="display:flex;align-items:center;gap:7px"><div class="dav" style="width:20px;height:20px;font-size:8px;background:'+a.bg+';color:'+a.c+'">'+ini(d.name)+'</div>'+d.name+(rank===0?'<span class="badge bon" style="font-size:9px;padding:1px 5px;margin-left:4px">top</span>':'')+'</div></td>'+
+        '<td style="color:var(--tx2)">'+d.zone+'</td><td style="color:var(--tx2)">'+(d.vehicle||'—')+'</td>'+
+        dd.income.map(function(v){return '<td>$'+Math.round(v)+'</td>';}).join('')+
+        '<td style="font-weight:700;color:var(--tx0)">$'+wk+'</td>'+
+        '<td>'+dd.trips+'</td>'+
+        '<td><span class="badge '+(d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff')+'">'+d.status+'</span></td>'+
+        '</tr>';
+    }).join('')+'</tbody>';
+
+  // Recent trips
+  var el=document.getElementById('recent-trips');
+  el.innerHTML=fareFeed.length
+    ?fareFeed.slice(0,10).map(function(f){
+        var isCard=f.paymentType==='card';
+        var badge=isCard?'<span class="card-owed-badge" style="margin-left:6px">CARD</span>':'<span class="cash-badge-sm" style="margin-left:6px">CASH</span>';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">'+
+          '<div style="font-size:18px;font-weight:700;color:'+(isCard?'var(--blue)':'var(--green)')+';min-width:64px">$'+f.fare.toFixed(2)+'</div>'+
+          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">'+f.driverName+badge+'</div><div style="font-size:10px;color:var(--tx2);margin-top:1px">'+f.pickup+'</div></div>'+
+          '<div style="font-size:10px;color:var(--tx3)">'+f.time+'</div></div>';
+      }).join('')
+    :'<div style="font-size:12px;color:var(--tx3);padding:8px 0">No completed trips yet.</div>';
+
+  // Card payments owed per driver
+  var cardTrips=fareFeed.filter(function(f){return f.paymentType==='card';});
+  var cardSection=document.getElementById('card-owed-section');
+  var cardList=document.getElementById('card-owed-list');
+  var cardTotalEl=document.getElementById('card-owed-total');
+  if(cardTrips.length){
+    cardSection.style.display='block';
+    // Group by driver
+    var byDriver={};
+    cardTrips.forEach(function(f){
+      if(!byDriver[f.driverName]) byDriver[f.driverName]={name:f.driverName,trips:0,totalFare:0,takeHome:0};
+      byDriver[f.driverName].trips++;
+      byDriver[f.driverName].totalFare+=f.fare;
+      byDriver[f.driverName].takeHome+=(f.takeHome||f.fare);
+    });
+    var grandTotal=Object.values(byDriver).reduce(function(s,d){return s+d.takeHome;},0);
+    cardTotalEl.textContent='$'+grandTotal.toFixed(2);
+    cardList.innerHTML='<div style="font-size:11px;color:var(--tx2);padding:6px 0 10px;border-bottom:1px solid var(--br);display:flex;gap:8px;font-weight:600">'
+      +'<span style="flex:2">Driver</span><span style="flex:1;text-align:center">Trips</span><span style="flex:1;text-align:right">Fare</span><span style="flex:1;text-align:right">Owes Driver</span></div>'
+      +Object.values(byDriver).sort(function(a,b){return b.takeHome-a.takeHome;}).map(function(d,i){
+        var a=av(i);
+        return '<div class="card-owed-row">'
+          +'<div style="flex:2;display:flex;align-items:center;gap:7px"><div class="dav" style="width:22px;height:22px;font-size:8px;background:'+a.bg+';color:'+a.c+'">'+ini(d.name)+'</div><span style="font-size:12px;font-weight:600;color:var(--tx0)">'+d.name+'</span></div>'
+          +'<div style="flex:1;text-align:center;font-size:12px;color:var(--tx2)">'+d.trips+'</div>'
+          +'<div style="flex:1;text-align:right;font-size:12px;color:var(--tx2)">$'+d.totalFare.toFixed(2)+'</div>'
+          +'<div style="flex:1;text-align:right;font-size:14px;font-weight:700;color:var(--blue)">$'+d.takeHome.toFixed(2)+'</div>'
+          +'</div>';
+      }).join('');
+  } else {
+    cardSection.style.display='none';
+  }
+}
+
+function exportCSV(){
+  var rows=[['Driver','Zone','Vehicle','Mon','Tue','Wed','Thu','Fri','Sat','Sun','Total','Trips']];
+  drivers.forEach(function(d){
+    var dd={income:[0,0,0,0,0,0,0],trips:0};
+    fareFeed.forEach(function(f){
+      if(f.driverName===d.name){
+        dd.trips++;
+        var day=new Date(f.completedAt||Date.now()).getDay();
+        dd.income[day===0?6:day-1]+=f.fare;
+      }
+    });
+    rows.push([d.name,d.zone,d.vehicle||'—'].concat(dd.income.map(function(v){return Math.round(v);})).concat([dd.income.reduce(function(a,b){return a+b;},0).toFixed(0),dd.trips]));
+  });
+  var csv=rows.map(function(r){return r.join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='izik_report_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('Report exported','tok');
+}
+
+function renderSettings(){
+  db.ref('zones').once('value').then(function(snap){
+    var data=snap.val()||{};
+    document.getElementById('s-zones').innerHTML=Object.entries(data).map(function(e){
+      return '<div class="drow"><div style="font-size:18px;width:30px;text-align:center">'+e[1].emoji+'</div><div style="flex:1;font-size:13px;font-weight:600;color:var(--tx0)">'+e[1].name+'</div><button class="rmbtn" onclick="db.ref(\'zones/'+e[0]+'\').remove().then(function(){toast(\'Removed\',\'tok\');renderSettings();loadZones();})">Remove</button></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--tx3);padding:4px 0">No zones yet</div>';
+  });
+  db.ref('drivers').once('value').then(function(snap){
+    var data=snap.val()||{};
+    document.getElementById('s-roster').innerHTML=Object.entries(data).map(function(e,i){
+      var d=e[1]; var a=av(i);
+      return '<div class="drow"><div class="dav" style="width:30px;height:30px;font-size:10px;background:'+a.bg+';color:'+a.c+'">'+ini(d.name)+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">'+d.name+'</div><div style="font-size:10px;color:var(--tx2)">'+(d.phone||'—')+'</div></div><button class="rmbtn" onclick="db.ref(\'drivers/'+e[0]+'\').remove().then(function(){toast(\'Removed\',\'tok\');renderSettings();})">Remove</button></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--tx3);padding:6px 0">No drivers yet</div>';
+  });
+  db.ref('approved_dispatchers').once('value').then(function(snap){
+    var data=snap.val()||{};
+    document.getElementById('s-disps').innerHTML=Object.entries(data).map(function(e){
+      return '<div class="drow"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">'+e[1].name+'</div><div style="font-size:10px;color:var(--tx2)">'+e[1].phone+'</div></div><button class="rmbtn" onclick="db.ref(\'approved_dispatchers/'+e[0]+'\').remove().then(function(){toast(\'Removed\',\'tok\');renderSettings();})">Remove</button></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--tx3);padding:4px 0">None</div>';
+  });
+  db.ref('approved_drivers').once('value').then(function(snap){
+    var data=snap.val()||{};
+    document.getElementById('s-adrvs').innerHTML=Object.entries(data).map(function(e){
+      return '<div class="drow"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx0)">'+e[1].name+'</div><div style="font-size:10px;color:var(--tx2)">'+e[1].phone+'</div></div><button class="rmbtn" onclick="db.ref(\'approved_drivers/'+e[0]+'\').remove().then(function(){toast(\'Removed\',\'tok\');renderSettings();})">Remove</button></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--tx3);padding:4px 0">None</div>';
+  });
+}
+
+function doAddDriver(){
+  var n=document.getElementById('s-dn').value.trim(), p=document.getElementById('s-dp').value.trim();
+  if(!n||!p){toast('Name and phone required','terr');return;}
+  var uid='manual_'+Date.now();
+  db.ref('drivers/'+uid).set({uid:uid,name:n,phone:p,zone:document.getElementById('s-dz').value||'Unassigned',vehicle:document.getElementById('s-dv').value||'—',active:false,onTrip:false,createdAt:new Date().toISOString()}).then(function(){
+    ['s-dn','s-dp','s-dz','s-dv'].forEach(function(id){document.getElementById(id).value='';});
+    toast(n+' added','tok'); renderSettings();
+  });
+}
+
+function doAddDisp(){
+  var n=document.getElementById('s-an').value.trim(), p=document.getElementById('s-ap').value.trim();
+  if(!n||!p){toast('Name and phone required','terr');return;}
+  if(p[0]!=='+'){toast('Phone must start with +','terr');return;}
+  db.ref('approved_dispatchers/disp_'+Date.now()).set({name:n,phone:p,addedAt:new Date().toISOString()}).then(function(){
+    document.getElementById('s-an').value=''; document.getElementById('s-ap').value='';
+    toast(n+' approved','tok'); renderSettings();
+  });
+}
+
+function doAddApprDrv(){
+  var n=document.getElementById('s-adn').value.trim(), p=document.getElementById('s-adp').value.trim();
+  if(!n||!p){toast('Name and phone required','terr');return;}
+  if(p[0]!=='+'){toast('Phone must start with +','terr');return;}
+  db.ref('approved_drivers/drv_'+Date.now()).set({name:n,phone:p,addedAt:new Date().toISOString()}).then(function(){
+    document.getElementById('s-adn').value=''; document.getElementById('s-adp').value='';
+    toast(n+' approved','tok'); renderSettings();
+  });
+}
+
+// ── MAP ──
+window.initMap = function(){
+  if(gmap) return;
+  gmap = new google.maps.Map(document.getElementById('gmap'),{
+    center:{lat:40.7128,lng:-74.006},zoom:11,
+    styles:[{featureType:'poi',stylers:[{visibility:'off'}]}],
+    mapTypeControl:false,streetViewControl:false,fullscreenControl:false
+  });
+  updatePins();
+};
+
+function updatePins(){
+  if(!gmap) return;
+  var online=drivers.filter(function(d){return d.active&&d.lat&&d.lng;});
+  document.getElementById('map-on').textContent=drivers.filter(function(d){return d.status!=='offline';}).length;
+  document.getElementById('map-trip').textContent=drivers.filter(function(d){return d.status==='on trip';}).length;
+  document.getElementById('map-ping').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  Object.keys(markers).forEach(function(uid){
+    if(!online.find(function(d){return (d.uid||d.id)===uid;})){markers[uid].setMap(null);delete markers[uid];}
+  });
+  online.forEach(function(d,i){
+    var k=d.uid||d.id; var pos={lat:d.lat,lng:d.lng}; var c=AVS[i%AVS.length];
+    if(markers[k]){markers[k].setPosition(pos);}
+    else{markers[k]=new google.maps.Marker({position:pos,map:gmap,title:d.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:c.bg,fillOpacity:1,strokeColor:c.c,strokeWeight:2.5},label:{text:ini(d.name),color:c.c,fontSize:'10px',fontWeight:'700'}});}
+  });
+}
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-dispatch.js').catch(function(){});
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAoy6ZHvw5deft3lzjkJdMVH42e0SJV1eM&callback=initMap"></script>
+</body>
+</html>
