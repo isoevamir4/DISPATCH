@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Driver — Izik Taxi</title>
+<link rel="manifest" href="/manifest-driver.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Izik Driver">
+<link rel="apple-touch-icon" href="/icon-driver.png">
+<style>
+:root{
+  --bg:#0d0f14;--bg1:#13161e;--bg2:#1a1e28;--bg3:#222736;
+  --br:#2e3548;--br2:#3d4660;
+  --tx0:#f0f2f8;--tx1:#b0b8d0;--tx2:#7a85a0;--tx3:#4a5270;
+  --blue:#4e8ef7;--blue2:#2d6be4;
+  --green:#3ec97a;--green-bg:#0d2418;
+  --amber:#f5a623;--amber-bg:#251a06;
+  --red:#f05050;--red-bg:#250d0d;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* AUTH — same structure as working dispatch */
+#auth-page{position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:60px 20px 40px;display:flex;align-items:flex-start;justify-content:center}
+.abox{background:var(--bg1);border:1px solid var(--br);border-radius:16px;padding:28px 24px;width:100%;max-width:360px;text-align:center}
+.alogo{width:60px;height:60px;background:var(--blue2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.atitle{font-size:22px;font-weight:700;color:var(--tx0);margin-bottom:6px}
+.asub{font-size:13px;color:var(--tx2);margin-bottom:18px;line-height:1.5}
+.ainp{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:17px;color:var(--tx0);font-family:inherit;outline:none;text-align:center;letter-spacing:1px;margin-bottom:10px}
+.ainp:focus{border-color:var(--blue2)}
+.ainp::placeholder{color:var(--tx3);letter-spacing:0}
+.abtn{width:100%;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:var(--blue2);color:#fff;font-family:inherit;margin-bottom:8px;touch-action:manipulation}
+.abtn:disabled{opacity:0.5}
+.aghost{background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:6px}
+.otp-row{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.obox{width:44px;height:52px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:22px;font-weight:700;color:var(--tx0);text-align:center;font-family:inherit;outline:none}
+.obox:focus{border-color:var(--blue2)}
+.fg{margin-bottom:10px;text-align:left}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:500}
+.fg input{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:15px;color:var(--tx0);font-family:inherit;outline:none}
+.fg input:focus{border-color:var(--blue2)}
+.fg input::placeholder{color:var(--tx3)}
+
+/* APP */
+.hdr{background:var(--bg1);border-bottom:1px solid var(--br);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-logo{display:flex;align-items:center;gap:8px}
+.hdr-icon{width:30px;height:30px;background:var(--blue2);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.hdr-name{font-size:15px;font-weight:700;color:var(--tx0)}
+.hdr-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px}
+.hs-off{background:var(--bg3);color:var(--tx2);border:1px solid var(--br2)}
+.hs-on{background:var(--green-bg);color:var(--green);border:1px solid #1a4a2e}
+.hs-trip{background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.sdot.pulse{animation:pu 1.4s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:0.3}}
+.nav{background:var(--bg1);border-top:1px solid var(--br);display:flex;flex-shrink:0}
+.nb{flex:1;padding:10px 4px 13px;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--tx3);font-family:inherit;transition:color 0.12s;position:relative;touch-action:manipulation}
+.nb.on{color:var(--blue)}
+.nb svg{width:20px;height:20px}
+.nb span{font-size:9px;font-weight:600}
+.notif-dot{position:absolute;top:8px;right:calc(50% - 13px);width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg1);display:none}
+.notif-dot.show{display:block}
+.main{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.screen{display:none}.screen.on{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--bg1);border:1px solid var(--br);border-radius:14px;overflow:hidden}
+.card-hdr{padding:12px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.5px}
+.card-body{padding:14px}
+.hero{text-align:center;padding:20px 14px}
+.hero-circle{width:90px;height:90px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+.hc-off{background:var(--bg3);border:2px solid var(--br2)}
+.hc-on{background:var(--green-bg);border:2px solid #1a5038;animation:gg 2s ease-in-out infinite}
+.hc-trip{background:var(--amber-bg);border:2px solid #4a3010;animation:ga 2s ease-in-out infinite}
+@keyframes gg{0%,100%{box-shadow:0 0 0 0 rgba(62,201,122,0.15)}50%{box-shadow:0 0 0 14px rgba(62,201,122,0)}}
+@keyframes ga{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,0.15)}50%{box-shadow:0 0 0 14px rgba(245,166,35,0)}}
+.hero-label{font-size:20px;font-weight:700;color:var(--tx0);margin-bottom:5px}
+.hero-sub{font-size:13px;color:var(--tx2);line-height:1.5}
+.coords{display:inline-block;margin-top:8px;padding:3px 10px;background:var(--bg3);border:1px solid var(--br2);border-radius:20px;font-size:10px;color:var(--tx2);font-family:monospace}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center}
+.stat-val{font-size:20px;font-weight:700;color:var(--tx0)}
+.stat-lbl{font-size:10px;color:var(--tx2);margin-top:2px}
+.btn{width:100%;padding:15px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;touch-action:manipulation}
+.btn:active{transform:scale(0.97)}
+.btn:disabled{opacity:0.5;cursor:default;transform:none}
+.btn-green{background:var(--green);color:#fff}
+.btn-amber{background:var(--amber);color:#111}
+.btn-red{background:var(--red);color:#fff}
+.btn-blue{background:var(--blue2);color:#fff}
+.btn-outline{background:transparent;color:var(--tx1);border:1.5px solid var(--br2);font-size:14px;padding:12px}
+.job-alert{background:var(--bg2);border:2px solid var(--amber);border-radius:14px;padding:14px;animation:jpulse 1.5s ease-in-out infinite}
+@keyframes jpulse{0%,100%{border-color:var(--amber)}50%{border-color:#5a3a08}}
+.job-badge{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.job-row{display:flex;gap:9px;margin-bottom:8px;align-items:flex-start}
+.job-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.jf-lbl{font-size:10px;color:var(--tx2);margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px}
+.jf-val{font-size:13px;color:var(--tx0);font-weight:500;line-height:1.4}
+.divider{height:1px;background:var(--br);margin:10px 0}
+.fare-wrap{position:relative;margin-bottom:10px}
+.fare-pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:700;color:var(--tx2)}
+.fare-input{width:100%;padding:13px 13px 13px 34px;background:var(--bg2);border:2px solid var(--br2);border-radius:12px;font-size:24px;font-weight:700;color:var(--tx0);font-family:inherit;outline:none}
+.fare-input:focus{border-color:var(--green)}
+.fare-input::placeholder{color:var(--tx3)}
+.fg2{margin-bottom:10px}
+.fg2 label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:500}
+.fg2 textarea{width:100%;padding:10px 12px;background:var(--bg2);border:1px solid var(--br2);border-radius:9px;font-size:13px;color:var(--tx0);font-family:inherit;outline:none;resize:none;height:60px}
+.preview-box{background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;margin-bottom:12px}
+.preview-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--br)}
+.preview-row:last-child{border-bottom:none;padding-top:8px;margin-top:2px}
+.preview-lbl{font-size:12px;color:var(--tx2)}
+.preview-val{font-size:13px;font-weight:600;color:var(--tx0)}
+.preview-total-lbl{font-size:13px;font-weight:700;color:var(--tx0)}
+.preview-total-val{font-size:16px;font-weight:700;color:var(--green)}
+.trip-item{display:flex;align-items:flex-start;gap:9px;padding:10px 0;border-bottom:1px solid var(--br)}
+.trip-item:last-child{border-bottom:none}
+.trip-num{width:26px;height:26px;border-radius:7px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--tx2);flex-shrink:0;margin-top:2px}
+.trip-info{flex:1}
+.trip-route{font-size:12px;color:var(--tx0);font-weight:500}
+.trip-meta{font-size:10px;color:var(--tx2);margin-top:1px}
+.trip-fare{text-align:right}
+.trip-fare-main{font-size:14px;font-weight:700;color:var(--green)}
+.trip-fare-comm{font-size:10px;color:var(--red);margin-top:2px}
+.chat-messages{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding:4px 0;margin-bottom:10px}
+.msg{max-width:82%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.msg-from{background:var(--bg3);color:var(--tx0);border-radius:12px 12px 12px 3px;align-self:flex-start}
+.msg-me{background:var(--blue2);color:#fff;border-radius:12px 12px 3px 12px;align-self:flex-end}
+.msg-time{font-size:10px;opacity:0.55;margin-top:3px}
+.msg-sender{font-size:10px;color:var(--tx2);margin-bottom:3px;font-weight:600}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{flex:1;padding:11px 13px;background:var(--bg2);border:1px solid var(--br2);border-radius:10px;font-size:14px;color:var(--tx0);font-family:inherit;outline:none}
+.chat-input-row input:focus{border-color:var(--blue2)}
+.chat-input-row input::placeholder{color:var(--tx3)}
+.chat-send{padding:11px 16px;background:var(--blue2);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.earn-tabs{display:flex;gap:4px;margin-bottom:14px}
+.etab{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--br);background:transparent;color:var(--tx2);font-family:inherit;transition:all 0.12s;text-align:center;touch-action:manipulation}
+.etab.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.earn-summary{background:var(--bg2);border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:10px}
+.earn-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--br)}
+.earn-row:last-child{border-bottom:none}
+.earn-lbl{font-size:13px;color:var(--tx2)}
+.earn-val{font-size:14px;font-weight:600;color:var(--tx0)}
+.earn-highlight{background:var(--green-bg);border:1px solid #1a4a2e;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.earn-highlight-lbl{font-size:13px;color:var(--green);font-weight:600}
+.earn-highlight-val{font-size:22px;font-weight:700;color:var(--green)}
+.comm-alert{background:#1a0808;border:2px solid var(--red);border-radius:12px;padding:16px;margin-bottom:10px;text-align:center}
+.comm-alert-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:6px}
+.comm-alert-amount{font-size:32px;font-weight:700;color:var(--red);margin-bottom:8px}
+.comm-alert-sub{font-size:12px;color:#a06060;line-height:1.6;margin-bottom:12px}
+.zelle-btn{display:block;width:100%;padding:13px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.week-day-card{background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;margin-bottom:8px}
+.week-day-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.week-day-name{font-size:13px;font-weight:600;color:var(--tx0)}
+.week-day-total{font-size:14px;font-weight:700;color:var(--green)}
+.week-day-detail{display:flex;gap:12px}
+.week-detail-item{font-size:11px;color:var(--tx2)}
+.week-detail-val{font-weight:600;color:var(--tx1)}
+.gps-error{background:#1a0808;border:1px solid #5a1515;border-radius:12px;padding:14px;margin-top:4px}
+.gps-step{display:flex;gap:9px;align-items:flex-start;margin-top:9px}
+.gps-num{width:20px;height:20px;border-radius:50%;background:#3d1515;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--red);flex-shrink:0;margin-top:1px}
+.toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);padding:9px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none;z-index:999;white-space:nowrap;border:1px solid}
+.tok{background:var(--green-bg);color:var(--green);border-color:#1a4a2e}
+.terr{background:var(--red-bg);color:var(--red);border-color:#3d1515}
+.tinfo{background:#1a2540;color:var(--blue);border-color:#2d4a80}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hero-card{background:var(--bg1);border-radius:20px;border:1px solid var(--br);position:relative;overflow:hidden;margin-bottom:0}
+.hero-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:20px 20px 0 0;background:var(--br);transition:background 0.3s}
+.hero-accent.on{background:var(--green)}
+.hero-accent.trip{background:var(--amber)}
+.greeting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.greeting-sub{font-size:11px;color:var(--tx2);font-weight:500;letter-spacing:0.5px;text-transform:uppercase}
+.greeting-name{font-size:18px;font-weight:700;color:var(--tx0);margin-top:2px}
+.driver-av{width:38px;height:38px;border-radius:50%;background:#1a2e50;border:2px solid var(--blue2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--blue)}
+.take-home-bar{background:var(--green-bg);border:1px solid #1a4a2e;border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.zone-row{display:flex;gap:8px;align-items:center}
+.zone-btn{flex:1;padding:10px 6px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--br2);background:var(--bg2);color:var(--tx2);font-family:inherit;transition:all 0.15s;text-align:center;touch-action:manipulation}
+.zone-btn.active{background:#1a2e50;border-color:var(--blue2);color:var(--blue)}
+.dispatch-msg{background:var(--bg1);border:1px solid var(--br);border-radius:12px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start}
+.dispatch-msg-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dispatch-msg-time{font-size:10px;color:var(--tx3);margin-bottom:2px}
+.dispatch-msg-text{font-size:13px;color:var(--tx0);line-height:1.4}
+.zone-label{font-size:10px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.pay-toggle{display:flex;gap:0;border:1.5px solid var(--br2);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.pay-opt{flex:1;padding:11px 8px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--bg2);color:var(--tx2);font-family:inherit;transition:all 0.15s;text-align:center;touch-action:manipulation}
+.pay-opt.sel-cash{background:#0d2418;color:var(--green)}
+.pay-opt.sel-card{background:#1a2e50;color:var(--blue)}
+.card-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#1a2e50;color:var(--blue);border:1px solid #2d4a80;margin-left:6px}
+.cash-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#0d2418;color:var(--green);border:1px solid #1a4a2e;margin-left:6px}
+</style>
+</head>
+<body>
+
+<!-- AUTH PAGE — same structure as working dispatch -->
+<div id="auth-page">
+  <div class="abox">
+    <div class="alogo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+        <circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/>
+      </svg>
+    </div>
+    <div class="atitle">Izik Taxi</div>
+
+    <div id="step-phone">
+      <div class="asub">Enter your phone number to sign in</div>
+      <input class="ainp" type="tel" id="phone-inp" placeholder="+1 718 555 0000" inputmode="tel" autocomplete="tel" autocorrect="off" autocapitalize="off"/>
+      <div id="recap-wrap" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+      <button class="abtn" id="btn-send" onclick="doSend()">Send code</button>
+    </div>
+
+    <div id="step-otp" style="display:none">
+      <div class="asub">Code sent to <strong id="ph-shown" style="color:var(--tx0)"></strong></div>
+      <div class="otp-row">
+        <input class="obox" type="number" id="o0" oninput="onOtp(0)" onkeydown="onOtpKey(event,0)"/>
+        <input class="obox" type="number" id="o1" oninput="onOtp(1)" onkeydown="onOtpKey(event,1)"/>
+        <input class="obox" type="number" id="o2" oninput="onOtp(2)" onkeydown="onOtpKey(event,2)"/>
+        <input class="obox" type="number" id="o3" oninput="onOtp(3)" onkeydown="onOtpKey(event,3)"/>
+        <input class="obox" type="number" id="o4" oninput="onOtp(4)" onkeydown="onOtpKey(event,4)"/>
+        <input class="obox" type="number" id="o5" oninput="onOtp(5)" onkeydown="onOtpKey(event,5)"/>
+      </div>
+      <button class="abtn" id="btn-verify" onclick="doVerify()">Verify</button>
+      <button class="aghost" onclick="doBack()">Use a different number</button>
+    </div>
+
+    <div id="step-profile" style="display:none">
+      <div class="asub">Almost done — tell us about yourself</div>
+      <div class="fg"><label>Your full name</label><input type="text" id="profile-name" placeholder="John Smith"/></div>
+      <div class="fg"><label>Your vehicle</label><input type="text" id="profile-vehicle" placeholder="Toyota Camry Black"/></div>
+      <div class="fg"><label>Your zone</label><input type="text" id="profile-zone" placeholder="Brooklyn North"/></div>
+      <button class="abtn" onclick="doSaveProfile()" style="margin-top:8px">Start driving</button>
+    </div>
+
+    <div id="step-blocked" style="display:none;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🚫</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">Access denied</div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Your number is not approved. Contact your dispatcher.</div>
+      <button class="abtn" onclick="location.reload()">Try a different number</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+        <circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/>
+      </svg>
+    </div>
+    <span class="hdr-name">Izik Taxi</span>
+  </div>
+  <div class="hdr-status hs-off" id="hstatus">
+    <div class="sdot" id="sdot"></div>
+    <span id="stext">Offline</span>
+  </div>
+</div>
+
+<div class="main" id="main">
+
+  <!-- HOME -->
+  <div class="screen" id="sc-home">
+
+    <!-- Greeting + avatar -->
+    <div class="greeting-row">
+      <div>
+        <div class="greeting-sub" id="greeting-time">Good morning</div>
+        <div class="greeting-name" id="greeting-name">Driver</div>
+      </div>
+      <div class="driver-av" id="driver-av">D</div>
+    </div>
+
+    <!-- DISPATCH UPDATES -->
+    <div>
+      <div class="zone-label">Dispatch updates</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+
+        <!-- Peak hours card -->
+        <div style="background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:13px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-size:12px;font-weight:600;color:var(--tx0)">Peak hours today</span>
+            <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #1a4a2e" id="peak-live-badge">Live</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-end;height:48px" id="peak-chart-bars"></div>
+        </div>
+
+        <!-- Dispatch messages -->
+        <div id="dispatch-msgs-list" style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;color:var(--tx3);text-align:center;padding:4px 0">No updates from dispatch yet</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Zone selector -->
+    <div style="background:var(--bg1);border:1px solid var(--br);border-radius:14px;padding:12px 14px">
+      <div class="zone-label">Your zone</div>
+      <div class="zone-row">
+        <button class="zone-btn active" id="zone-B" onclick="setZone('B',this)">B<br><span style="font-size:9px;font-weight:400;color:inherit;opacity:0.7">Borough Park</span></button>
+        <button class="zone-btn" id="zone-W" onclick="setZone('W',this)">W<br><span style="font-size:9px;font-weight:400;color:inherit;opacity:0.7">Williamsburg</span></button>
+        <button class="zone-btn" id="zone-UP" onclick="setZone('UP',this)">👍<br><span style="font-size:9px;font-weight:400;color:inherit;opacity:0.7">Upstate</span></button>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val" id="st-trips">0</div><div class="stat-lbl">Trips</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green)" id="st-earn">$0</div><div class="stat-lbl">Earned</div></div>
+      <div class="stat"><div class="stat-val" id="st-hrs">0h</div><div class="stat-lbl">Online</div></div>
+    </div>
+
+    <!-- Take home strip -->
+    <div class="take-home-bar" id="take-home-bar">
+      <div>
+        <div style="font-size:10px;color:#3a7a50;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Take home today</div>
+        <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:2px" id="st-takehome">$0.00</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:#3a7a50">Commission</div>
+        <div style="font-size:14px;font-weight:600;color:var(--red)" id="st-commission">−$0.00</div>
+      </div>
+    </div>
+
+    <!-- Status card — centered like mockup -->
+    <div style="background:var(--bg1);border:1px solid var(--br);border-radius:20px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:20px 20px 0 0;transition:background 0.3s" id="hero-accent-bar"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 20px 20px">
+        <div class="hero-circle hc-off" id="hero-circle" style="margin-bottom:14px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tx2)">
+            <circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/>
+          </svg>
+        </div>
+        <div class="hero-label" id="hero-label">You are offline</div>
+        <div class="hero-sub" id="hero-sub">Tap below to start your shift</div>
+        <div class="coords" id="coords" style="display:none;margin-top:8px">waiting for GPS...</div>
+      </div>
+      <div style="padding:0 16px 20px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-green" id="btn-online" onclick="goOnline()" style="border-radius:28px;font-size:15px;padding:13px">Go Online</button>
+        <button class="btn btn-red" id="btn-offline" style="display:none;border-radius:28px;font-size:15px;padding:13px" onclick="confirmEndShift()">End Shift</button>
+        <button style="background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:4px;text-align:center;width:100%" onclick="doSignOut()">Sign out</button>
+      </div>
+    </div>
+    <!-- Upcoming scheduled jobs -->
+    <div id="upcoming-jobs" style="display:none;flex-direction:column;gap:8px"></div>
+
+    <div id="active-job" style="display:none">
+      <div class="job-alert">
+        <div class="job-badge"><div style="width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pu 1s infinite"></div>Active job</div>
+        <div class="job-row"><div class="job-icon" style="background:#1a1400">📞</div><div><div class="jf-lbl">Client phone</div><div class="jf-val" id="job-phone">—</div></div></div>
+        <div class="job-row"><div class="job-icon" style="background:#0a1a08">📍</div><div><div class="jf-lbl">Pickup</div><div class="jf-val" id="job-pickup">—</div></div></div>
+        <div class="job-row"><div class="job-icon" style="background:#0a0a1a">🏁</div><div><div class="jf-lbl">Drop-off</div><div class="jf-val" id="job-dropoff">—</div></div></div>
+        <div class="job-row"><div class="job-icon" style="background:#0a1a0a">💵</div><div><div class="jf-lbl">Agreed fare</div><div class="jf-val" id="job-fare">—</div></div></div>
+        <div class="job-row" id="job-notes-row" style="display:none"><div class="job-icon" style="background:#1a1208">📝</div><div><div class="jf-lbl">Notes</div><div class="jf-val" id="job-notes">—</div></div></div>
+        <div class="divider"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-blue" onclick="openMaps()" style="font-size:14px;padding:12px">Navigate to Pickup</button>
+          <button class="btn btn-amber" onclick="goScreen('complete')" style="font-size:14px;padding:12px">Trip Complete — Enter Fare</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLETE TRIP -->
+  <div class="screen" id="sc-complete">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Complete trip</span></div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">How did client pay?</div>
+        <div class="pay-toggle" id="pay-toggle">
+          <button class="pay-opt sel-cash" id="pay-cash" onclick="selectPayment('cash')">💵 Cash</button>
+          <button class="pay-opt" id="pay-card" onclick="selectPayment('card')">💳 Card (to Acc)</button>
+        </div>
+        <div id="card-notice" style="display:none;background:#1a2e50;border:1px solid #2d4a80;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#7ab0e8;line-height:1.5">
+          Card payment goes to dispatcher account. Your take-home will be paid to you by dispatch separately.
+        </div>
+        <div class="fg2"><label>Fare amount ($)</label>
+          <div class="fare-wrap"><span class="fare-pre">$</span><input class="fare-input" type="number" id="fare-val" placeholder="0.00" inputmode="decimal" oninput="updatePreview()"/></div>
+        </div>
+        <div class="fg2"><label>Tolls paid ($) — if any</label>
+          <div class="fare-wrap"><span class="fare-pre" style="font-size:18px">$</span><input class="fare-input" type="number" id="toll-val" placeholder="0.00" inputmode="decimal" style="font-size:20px;padding:12px 12px 12px 32px" oninput="updatePreview()"/></div>
+        </div>
+        <div class="preview-box" id="fare-preview" style="display:none">
+          <div class="preview-row"><span class="preview-lbl">Fare</span><span class="preview-val" id="prev-fare">$0.00</span></div>
+          <div class="preview-row"><span class="preview-lbl">Tolls paid</span><span class="preview-val" style="color:var(--amber)" id="prev-toll">$0.00</span></div>
+          <div class="preview-row"><span class="preview-lbl">Net (fare − tolls)</span><span class="preview-val" id="prev-net">$0.00</span></div>
+          <div class="preview-row"><span class="preview-lbl">Commission (20%)</span><span class="preview-val" style="color:var(--red)" id="prev-comm">$0.00</span></div>
+          <div class="preview-row"><span class="preview-total-lbl">Your take home</span><span class="preview-total-val" id="prev-take">$0.00</span></div>
+        </div>
+        <div class="fg2"><label>Notes (optional)</label>
+          <textarea id="fare-notes" placeholder="Any notes about the trip..."></textarea>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-green" onclick="submitFare()">Submit & Complete Trip</button>
+          <button class="btn btn-outline" onclick="goScreen('home')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRIP LOG -->
+  <div class="screen" id="sc-log">
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val" id="log-trips">0</div><div class="stat-lbl">Trips</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green)" id="log-earn">$0</div><div class="stat-lbl">Earned</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)" id="log-avg">$0</div><div class="stat-lbl">Avg fare</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Today's trips</span><span style="font-size:11px;color:var(--tx2)" id="log-date"></span></div>
+      <div class="card-body"><div id="trip-list"><div style="text-align:center;padding:16px 0;color:var(--tx3);font-size:13px">No trips yet today.</div></div></div>
+    </div>
+  </div>
+
+  <!-- EARNINGS -->
+  <div class="screen" id="sc-earn">
+    <div class="earn-tabs">
+      <button class="etab on" id="et-day" onclick="setEarnTab('day',this)">Daily</button>
+      <button class="etab" id="et-week" onclick="setEarnTab('week',this)">Weekly</button>
+      <button class="etab" id="et-month" onclick="setEarnTab('month',this)">Monthly</button>
+    </div>
+    <div id="earn-content"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="screen" id="sc-chat">
+    <div class="card" style="flex:1">
+      <div class="card-hdr"><span class="card-title">Messages — Dispatch</span><span style="font-size:10px;color:var(--green)">Connected</span></div>
+      <div class="card-body" style="display:flex;flex-direction:column">
+        <div class="chat-messages" id="chat-messages"><div style="text-align:center;padding:20px 0;color:var(--tx3);font-size:12px">No messages yet.</div></div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Message dispatch..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+          <button class="chat-send" onclick="sendMsg()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="nav" id="bottom-nav" style="display:none">
+  <button class="nb on" id="nb-home" onclick="goScreen('home',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nb" id="nb-log" onclick="goScreen('log',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span>Trips</span>
+  </button>
+  <button class="nb" id="nb-earn" onclick="goScreen('earn',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <span>Earnings</span>
+  </button>
+  <button class="nb" id="nb-chat" onclick="goScreen('chat',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span>Messages</span>
+    <div class="notif-dot" id="dot-chat"></div>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- End Shift Confirmation Modal -->
+<div id="end-shift-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#13161e;border:1px solid #2e3548;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center">
+    <div style="width:56px;height:56px;border-radius:50%;background:#250d0d;border:2px solid #f05050;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f05050" stroke-width="2.2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+    <div style="font-size:18px;font-weight:700;color:#f0f2f8;margin-bottom:8px">End your shift?</div>
+    <div style="font-size:13px;color:#7a85a0;margin-bottom:24px;line-height:1.5">You'll go offline and stop receiving jobs. You can come back online anytime.</div>
+    <div style="display:flex;gap:10px">
+      <button onclick="cancelEndShift()" style="flex:1;padding:13px;border-radius:12px;background:#1a1e28;border:1.5px solid #2e3548;color:#b0b8d0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation">Stay Online</button>
+      <button onclick="confirmGoOffline()" style="flex:1;padding:13px;border-radius:12px;background:#f05050;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation">End Shift</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+var auth, db, recapV, confirmResult, driver;
+var isOnline=false, onTrip=false, watchId=null;
+var lastLat=null, lastLng=null, onlineStart=null, onlineTimer=null;
+var todayTrips=[], allTrips={}, activeJob=null, chatMessages=[];
+var curScreen='home', curEarnTab='day';
+var COMMISSION=0.20;
+var DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function toast(msg,cls,dur){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(cls||'tok'); t.style.display='block';
+  clearTimeout(toast._t); toast._t=setTimeout(function(){t.style.display='none';},dur||3000);
+}
+
+function showStep(s){
+  ['phone','otp','profile','blocked'].forEach(function(x){
+    document.getElementById('step-'+x).style.display=x===s?'block':'none';
+  });
+}
+
+// ── FIREBASE INIT ──
+firebase.initializeApp({
+  apiKey:"AIzaSyDyfq2Cmj9LmMpY3FIJ8TuLHiQ7PYBQTys",
+  authDomain:"izik-taxi-service.firebaseapp.com",
+  databaseURL:"https://izik-taxi-service-default-rtdb.firebaseio.com",
+  projectId:"izik-taxi-service",
+  storageBucket:"izik-taxi-service.firebasestorage.app",
+  messagingSenderId:"835965697791",
+  appId:"1:835965697791:web:fa2830a4b400c0803656ca"
+});
+auth = firebase.auth();
+db   = firebase.database();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+
+// Invisible recaptcha — created immediately, same as working dispatch
+recapV = new firebase.auth.RecaptchaVerifier('recap-wrap', {
+  size: 'invisible',
+  callback: function(){}
+});
+
+// ── AUTH STATE ──
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    document.getElementById('auth-page').style.display='flex';
+    return;
+  }
+  db.ref('approved_drivers').once('value').then(function(ws){
+    var wl=ws.val()||{};
+    var approved=Object.values(wl).map(function(e){return e.phone;});
+    if(approved.length>0 && approved.indexOf(user.phoneNumber)<0){
+      showStep('blocked'); auth.signOut(); return;
+    }
+    db.ref('drivers/'+user.uid).once('value').then(function(snap){
+      if(snap.exists()){
+        driver=Object.assign({uid:user.uid},snap.val());
+        showApp();
+      } else {
+        showStep('profile');
+      }
+    });
+  });
+});
+
+function showApp(){
+  document.getElementById('auth-page').style.display='none';
+  document.getElementById('bottom-nav').style.display='flex';
+  document.getElementById('sc-home').classList.add('on');
+  document.getElementById('log-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  // Greeting
+  var h=new Date().getHours();
+  var greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('greeting-time').textContent=greet;
+  var firstName=(driver.name||'Driver').split(' ')[0];
+  document.getElementById('greeting-name').textContent=firstName;
+  document.getElementById('driver-av').textContent=firstName.charAt(0).toUpperCase();
+  // Zone — restore saved or use profile zone
+  var savedZone=localStorage.getItem('driverZone_'+(driver.uid||'x'))||driver.zone||'B';
+  setZoneUI(savedZone);
+  loadAllTrips();
+  startPolling();
+  loadPeakChart();
+  checkFridayAlert();
+  if(Notification&&Notification.permission==='default') Notification.requestPermission();
+  setTimeout(showInstallBanner, 5000);
+}
+
+function setZone(z, el){
+  setZoneUI(z);
+  localStorage.setItem('driverZone_'+(driver?driver.uid:'x'), z);
+  if(driver) db.ref('drivers/'+driver.uid).update({zone:z}).catch(function(){});
+}
+function setZoneUI(z){
+  document.querySelectorAll('.zone-btn').forEach(function(b){b.classList.remove('active');});
+  var btn=document.getElementById('zone-'+z);
+  if(btn) btn.classList.add('active');
+}
+
+// ── SEND CODE — same as doSend() in dispatch ──
+function doSend(){
+  var phone=document.getElementById('phone-inp').value.trim();
+  if(!phone){toast('Enter your phone number','terr');return;}
+  var btn=document.getElementById('btn-send');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  auth.signInWithPhoneNumber(phone, recapV).then(function(result){
+    confirmResult=result;
+    document.getElementById('ph-shown').textContent=phone;
+    showStep('otp');
+    document.getElementById('o0').focus();
+    toast('Code sent!');
+    btn.disabled=false; btn.innerHTML='Send code';
+  }).catch(function(e){
+    toast(e.message,'terr',6000);
+    btn.disabled=false; btn.innerHTML='Send code';
+    recapV.clear();
+    recapV=new firebase.auth.RecaptchaVerifier('recap-wrap',{size:'invisible',callback:function(){}});
+  });
+}
+
+function onOtp(i){
+  var el=document.getElementById('o'+i);
+  if(el.value.length>1) el.value=el.value.slice(-1);
+  if(el.value&&i<5) document.getElementById('o'+(i+1)).focus();
+  var code=''; for(var j=0;j<6;j++) code+=document.getElementById('o'+j).value;
+  if(code.length===6) doVerify();
+}
+function onOtpKey(e,i){if(e.key==='Backspace'&&!document.getElementById('o'+i).value&&i>0)document.getElementById('o'+(i-1)).focus();}
+
+function doVerify(){
+  var code=''; for(var i=0;i<6;i++) code+=document.getElementById('o'+i).value;
+  if(code.length<6){toast('Enter the full 6-digit code','terr');return;}
+  var btn=document.getElementById('btn-verify');
+  btn.disabled=true; btn.innerHTML='Verifying...';
+  confirmResult.confirm(code).then(function(){
+    toast('Verified!');
+  }).catch(function(e){
+    toast('Invalid code','terr');
+    btn.disabled=false; btn.innerHTML='Verify';
+  });
+}
+
+function doBack(){
+  showStep('phone');
+  document.getElementById('btn-send').disabled=false;
+  document.getElementById('btn-send').innerHTML='Send code';
+}
+
+function doSaveProfile(){
+  var name=document.getElementById('profile-name').value.trim();
+  var vehicle=document.getElementById('profile-vehicle').value.trim();
+  var zone=document.getElementById('profile-zone').value.trim();
+  if(!name){toast('Enter your name','terr');return;}
+  var user=auth.currentUser;
+  var profile={uid:user.uid,name:name,vehicle:vehicle||'—',zone:zone||'Unassigned',phone:user.phoneNumber,active:false,onTrip:false,createdAt:new Date().toISOString()};
+  db.ref('drivers/'+user.uid).set(profile).then(function(){driver=profile;showApp();});
+}
+
+function doSignOut(){
+  if(isOnline) setOfflineInDB();
+  auth.signOut().then(function(){location.reload();});
+}
+
+// ── SCREEN NAV ──
+function goScreen(name,btn){
+  curScreen=name;
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('sc-'+name).classList.add('on');
+  var nb=document.getElementById('nb-'+name); if(nb) nb.classList.add('on');
+  if(name==='log') renderTripLog();
+  if(name==='earn') renderEarnings();
+  if(name==='chat'){renderChat();document.getElementById('dot-chat').classList.remove('show');}
+}
+
+// ── HEADER ──
+function updateHeader(){
+  var el=document.getElementById('hstatus'),dot=document.getElementById('sdot'),txt=document.getElementById('stext');
+  if(onTrip){el.className='hdr-status hs-trip';dot.className='sdot pulse';txt.textContent='On trip';}
+  else if(isOnline){el.className='hdr-status hs-on';dot.className='sdot pulse';txt.textContent='Online';}
+  else{el.className='hdr-status hs-off';dot.className='sdot';txt.textContent='Offline';}
+}
+
+// ── GPS ──
+function goOnline(){
+  if(!driver) return;
+  if(!('geolocation' in navigator)){showGPSError('unsupported');return;}
+  var btn=document.getElementById('btn-online');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Getting GPS...';
+  navigator.geolocation.getCurrentPosition(function(pos){
+    isOnline=true; lastLat=pos.coords.latitude; lastLng=pos.coords.longitude;
+    onlineStart=Date.now(); pushLocation(); removeGPSError(); updateUI();
+    watchId=navigator.geolocation.watchPosition(function(p){
+      lastLat=p.coords.latitude; lastLng=p.coords.longitude; pushLocation();
+      var c=document.getElementById('coords'); if(c) c.textContent=lastLat.toFixed(5)+', '+lastLng.toFixed(5);
+    },null,{enableHighAccuracy:true,maximumAge:8000});
+    onlineTimer=setInterval(function(){
+      if(!onlineStart) return;
+      document.getElementById('st-hrs').textContent=((Date.now()-onlineStart)/3600000).toFixed(1)+'h';
+    },30000);
+    toast(driver.name+' — you are online');
+  },function(err){
+    btn.disabled=false; btn.innerHTML='Go Online';
+    showGPSError(err.code===1?'denied':'unavailable');
+  },{enableHighAccuracy:true,timeout:12000});
+}
+
+function confirmEndShift(){
+  var modal=document.getElementById('end-shift-modal');
+  modal.style.display='flex';
+}
+function cancelEndShift(){
+  document.getElementById('end-shift-modal').style.display='none';
+}
+function confirmGoOffline(){
+  document.getElementById('end-shift-modal').style.display='none';
+  goOffline();
+}
+
+function goOffline(){
+  if(onTrip){toast('Complete your trip first','terr');return;}
+  if(watchId) navigator.geolocation.clearWatch(watchId);
+  clearInterval(onlineTimer);
+  if(onlineStart){
+    var hrs=(Date.now()-onlineStart)/3600000;
+    var dk=new Date().toDateString().replace(/ /g,'_');
+    var key='shiftHrs_'+(driver?driver.uid:'x')+'_'+dk;
+    var prev=parseFloat(localStorage.getItem(key)||'0');
+    localStorage.setItem(key,(prev+hrs).toFixed(4));
+  }
+  isOnline=false; onlineStart=null;
+  setOfflineInDB(); updateUI(); toast('You are offline. Good work!');
+}
+
+function getShiftHours(dateStr){
+  var dk=dateStr.replace(/ /g,'_');
+  var key='shiftHrs_'+(driver?driver.uid:'x')+'_'+dk;
+  var saved=parseFloat(localStorage.getItem(key)||'0');
+  if(isOnline&&onlineStart&&new Date().toDateString()===dateStr){
+    saved+=(Date.now()-onlineStart)/3600000;
+  }
+  return saved;
+}
+
+function fmtHrs(h){
+  if(h<0.01) return '—';
+  var hh=Math.floor(h);
+  var mm=Math.round((h-hh)*60);
+  return mm>0?hh+'h '+mm+'m':hh+'h';
+}
+
+function updateUI(){
+  var circle=document.getElementById('hero-circle'),label=document.getElementById('hero-label'),sub=document.getElementById('hero-sub'),coords=document.getElementById('coords');
+  var btnOn=document.getElementById('btn-online'),btnOff=document.getElementById('btn-offline');
+  updateHeader();
+  // Accent bar
+  var accent=document.getElementById('hero-accent-bar');
+  if(accent){accent.style.background=onTrip?'var(--amber)':isOnline?'var(--green)':'transparent';}
+  if(onTrip){
+    circle.className='hero-circle hc-trip'; label.textContent='On a trip'; sub.textContent='Complete at drop-off.';
+    coords.style.display='none'; btnOn.style.display='none'; btnOff.style.display='none';
+    document.getElementById('active-job').style.display='block';
+  } else if(isOnline){
+    circle.className='hero-circle hc-on'; label.textContent='You are online'; sub.textContent='Waiting for a job...';
+    coords.style.display='none';
+    btnOn.style.display='none'; btnOff.style.display='flex';
+    document.getElementById('active-job').style.display='none';
+  } else {
+    circle.className='hero-circle hc-off'; label.textContent='You are offline'; sub.textContent='Tap below to start your shift.';
+    coords.style.display='none'; btnOn.style.display='flex'; btnOn.disabled=false; btnOn.innerHTML='Go Online';
+    btnOff.style.display='none'; document.getElementById('active-job').style.display='none';
+  }
+  updateStats();
+}
+
+function updateStats(){
+  var total=todayTrips.reduce(function(s,t){return s+t.fare;},0);
+  var totalTake=todayTrips.reduce(function(s,t){return s+(t.takeHome||t.fare);},0);
+  var totalComm=todayTrips.reduce(function(s,t){return s+(t.commission||0);},0);
+  var avg=todayTrips.length?Math.round(total/todayTrips.length):0;
+  document.getElementById('st-trips').textContent=todayTrips.length;
+  document.getElementById('st-earn').textContent='$'+total.toFixed(0);
+  document.getElementById('log-trips').textContent=todayTrips.length;
+  document.getElementById('log-earn').textContent='$'+total.toFixed(0);
+  document.getElementById('log-avg').textContent='$'+avg;
+  var th=document.getElementById('st-takehome'); if(th) th.textContent='$'+totalTake.toFixed(2);
+  var cm=document.getElementById('st-commission'); if(cm) cm.textContent='−$'+totalComm.toFixed(2);
+}
+
+// ── FIREBASE OPS ──
+function pushLocation(){
+  if(!driver) return;
+  db.ref('drivers/'+driver.uid).update({lat:lastLat,lng:lastLng,timestamp:Date.now(),active:true,onTrip:onTrip,name:driver.name,phone:driver.phone,vehicle:driver.vehicle,zone:driver.zone}).catch(function(){});
+}
+function setOfflineInDB(){
+  if(!driver) return;
+  db.ref('drivers/'+driver.uid).update({active:false,onTrip:false,timestamp:Date.now()}).catch(function(){});
+}
+
+// ── POLLING ──
+
+function loadPeakChart() {
+  db.ref('peak_hours').once('value').then(function(snap) {
+    var data = snap.val() || {'8am':1,'12pm':1,'4pm':2,'8pm':1,'12am':0};
+    var slots = ['8am','12pm','4pm','8pm','12am'];
+    var heights = [0, 25, 55, 100]; // Off, Low, Busy, Very Busy
+    var el = document.getElementById('peak-chart-bars');
+    var badge = document.getElementById('peak-live-badge');
+    if (!el) return;
+    var maxVal = Math.max.apply(null, slots.map(function(s){return data[s]||0;}));
+    el.innerHTML = slots.map(function(s) {
+      var val = data[s] !== undefined ? data[s] : 1;
+      var h = heights[val];
+      var isHot = val === 3;
+      var isBusy = val === 2;
+      var barColor = isHot ? 'var(--amber)' : isBusy ? 'var(--blue)' : 'var(--br2)';
+      var lblColor = isHot ? 'var(--amber)' : 'var(--tx3)';
+      var lbl = s + (isHot ? ' 🔥' : '');
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%">'+
+        '<div style="flex:1;width:100%;display:flex;align-items:flex-end">'+
+        '<div style="width:100%;height:' + (h||5) + '%;background:' + barColor + ';border-radius:3px 3px 0 0;opacity:' + (val===0?'0.2':'1') + '"></div></div>'+
+        '<span style="font-size:9px;color:' + lblColor + ';font-weight:' + (isHot?'700':'400') + '">' + lbl + '</span></div>';
+    }).join('');
+    if (badge) {
+      var hasData = maxVal > 0;
+      badge.textContent = hasData ? 'Live' : 'No updates';
+      badge.style.background = hasData ? 'var(--green-bg)' : 'var(--bg3)';
+      badge.style.color = hasData ? 'var(--green)' : 'var(--tx2)';
+      badge.style.borderColor = hasData ? '#1a4a2e' : 'var(--br2)';
+    }
+  }).catch(function(){});
+}
+function loadUpcomingJobs() {
+  if (!driver) return;
+  db.ref('upcoming_jobs/'+driver.uid).once('value').then(function(snap) {
+    var data = snap.val();
+    var el = document.getElementById('upcoming-jobs');
+    if (!el) return;
+    if (!data) { el.style.display='none'; return; }
+    var jobs = Object.entries(data).map(function(e){ return Object.assign({key:e[0]},e[1]); })
+      .filter(function(j){ return j.status !== 'cancelled' && j.status !== 'completed'; })
+      .sort(function(a,b){ return a.scheduledFor - b.scheduledFor; });
+    if (!jobs.length) { el.style.display='none'; return; }
+    el.style.display='flex';
+    el.innerHTML = jobs.map(function(j) {
+      var d = new Date(j.scheduledFor);
+      var timeStr = d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      var dateStr = d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+      var minutesAway = Math.round((j.scheduledFor - Date.now()) / 60000);
+      var isNow = minutesAway <= 5;
+      var urgency = isNow ? 'var(--amber)' : 'var(--blue)';
+      var urgencyBg = isNow ? 'var(--amber-bg)' : '#1a2e50';
+      var urgencyBorder = isNow ? '#3a2a0a' : '#2d4a80';
+      var countdown = minutesAway <= 0 ? '⚡ Now!' : minutesAway < 60 ? timeStr+' · in '+minutesAway+'m' : timeStr;
+      return '<div style="background:var(--bg1);border:2px solid '+urgencyBorder+';border-radius:14px;padding:13px 14px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<span style="font-size:11px;font-weight:700;color:'+urgency+';text-transform:uppercase;letter-spacing:0.5px">🕐 Upcoming job</span>'
+        + '<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+urgencyBg+';color:'+urgency+';border:1px solid '+urgencyBorder+'">'+dateStr+' · '+countdown+'</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:7px">'
+        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:16px;width:24px">📞</div><div><div style="font-size:10px;color:var(--tx2);text-transform:uppercase;font-weight:500">Client</div><div style="font-size:13px;color:var(--tx0)">'+j.phone+'</div></div></div>'
+        + '<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:16px;width:24px">📍</div><div><div style="font-size:10px;color:var(--tx2);text-transform:uppercase;font-weight:500">Pickup</div><div style="font-size:13px;color:var(--tx0)">'+j.pickup+'</div></div></div>'
+        + (j.fare ? '<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:16px;width:24px">💵</div><div><div style="font-size:10px;color:var(--tx2);text-transform:uppercase;font-weight:500">Fare</div><div style="font-size:13px;color:var(--tx0)">$'+j.fare+'</div></div></div>' : '')
+        + (j.notes ? '<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:16px;width:24px">📝</div><div><div style="font-size:10px;color:var(--tx2);text-transform:uppercase;font-weight:500">Notes</div><div style="font-size:13px;color:var(--tx0)">'+j.notes+'</div></div></div>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:12px">'
+        + '<button class="btn btn-green" onclick="activateScheduledJob(\'' + j.key + '\')" style="flex:1;font-size:14px;padding:13px">Start Job</button>'
+        + '<button class="btn btn-outline" onclick="cancelUpcomingJob(\'' + j.key + '\')" style="flex:0 0 auto;font-size:12px;padding:10px 16px;opacity:0.8">Cancel</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }).catch(function(){});
+}
+
+function cancelUpcomingJob(key) {
+  if (!driver) return;
+  if (!confirm('Cancel this job?')) return;
+  db.ref('upcoming_jobs/'+driver.uid+'/'+key).remove().then(function(){
+    toast('Job cancelled','tok');
+    loadUpcomingJobs();
+  });
+}
+
+function activateScheduledJob(key) {
+  if (!driver) { toast('Please sign in first','terr'); return; }
+  db.ref('upcoming_jobs/'+driver.uid+'/'+key).once('value').then(function(snap) {
+    var job = snap.val();
+    if (!job) { toast('Job not found — may have been cancelled','terr'); return; }
+    // Set active job
+    activeJob = job;
+    onTrip = true;
+    // Update Firebase — dispatch sees on trip immediately
+    isOnline = true; onTrip = true;
+    var updates = {};
+    updates['drivers/'+driver.uid+'/onTrip'] = true;
+    updates['drivers/'+driver.uid+'/active'] = true;
+    updates['drivers/'+driver.uid+'/timestamp'] = Date.now();
+    updates['drivers/'+driver.uid+'/name'] = driver.name;
+    updates['drivers/'+driver.uid+'/phone'] = driver.phone;
+    updates['drivers/'+driver.uid+'/zone'] = driver.zone;
+    updates['jobs/'+driver.uid] = Object.assign({}, job, {status:'accepted', startedAt: new Date().toISOString()});
+    updates['upcoming_jobs/'+driver.uid+'/'+key] = null;
+    db.ref().update(updates).then(function(){
+      // Update job card UI
+      var jPhone = document.getElementById('job-phone');
+      var jPickup = document.getElementById('job-pickup');
+      var jDropoff = document.getElementById('job-dropoff');
+      var jFare = document.getElementById('job-fare');
+      if(jPhone) jPhone.textContent = job.phone||'—';
+      if(jPickup) jPickup.textContent = job.pickup||'—';
+      if(jDropoff) jDropoff.textContent = job.dropoff||'—';
+      if(jFare) jFare.textContent = job.fare?'$'+job.fare:'—';
+      var nr = document.getElementById('job-notes-row');
+      if(nr){ if(job.notes){nr.style.display='flex'; document.getElementById('job-notes').textContent=job.notes;} else nr.style.display='none'; }
+      loadUpcomingJobs();
+      updateUI();
+      toast('Job started — dispatch notified','tok',4000);
+    }).catch(function(e){ toast('Error: '+e.message,'terr'); });
+  }).catch(function(e){ toast('Error loading job: '+e.message,'terr'); });
+}
+
+function startPolling(){setInterval(poll,5000);poll();}
+function poll(){
+  if(!driver) return;
+  db.ref('jobs/'+driver.uid).once('value').then(function(snap){
+    var job=snap.val();
+    if(job&&job.status==='pending'&&!onTrip) receiveJob(job);
+  }).catch(function(){});
+  loadPeakChart();
+  loadUpcomingJobs();
+  // Load dispatch broadcasts
+  db.ref('dispatch_updates').orderByChild('ts').limitToLast(5).once('value').then(function(snap){
+    var data=snap.val();
+    var el=document.getElementById('dispatch-msgs-list');
+    var badge=document.getElementById('peak-live-badge');
+    if(!el) return;
+    if(!data){
+      el.innerHTML='<div style="font-size:12px;color:var(--tx3);text-align:center;padding:8px 0">No updates from dispatch</div>';
+      if(badge) badge.textContent='No updates';
+      return;
+    }
+    var msgs=Object.values(data).sort(function(a,b){return b.ts-a.ts;});
+    if(badge) badge.textContent='Live';
+    el.innerHTML=msgs.map(function(m){
+      var age=Date.now()-m.ts;
+      var ageStr=age<3600000?Math.round(age/60000)+'m ago':age<86400000?Math.round(age/3600000)+'h ago':Math.round(age/86400000)+'d ago';
+      var isHiring=m.text&&m.text.toLowerCase().indexOf('hir')>=0;
+      var iconBg=isHiring?'#251a06':'#1a1e28';
+      var iconColor=isHiring?'#f5a623':'#4e8ef7';
+      var icon=isHiring
+        ?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+iconColor+'" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>'
+        :'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+iconColor+'" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>';
+      return '<div class="dispatch-msg"><div class="dispatch-msg-icon" style="background:'+iconBg+'">'+icon+'</div>'
+        +'<div style="flex:1"><div class="dispatch-msg-time">Dispatch · '+ageStr+'</div><div class="dispatch-msg-text">'+m.text+'</div></div></div>';
+    }).join('');
+  }).catch(function(){});
+
+  db.ref('messages/'+driver.uid).once('value').then(function(ms){
+    var msgs=ms.val();
+    if(msgs){
+      var arr=Object.values(msgs).sort(function(a,b){return a.ts-b.ts;});
+      if(arr.length>chatMessages.length){
+        var newM=arr.slice(chatMessages.length);
+        chatMessages=arr;
+        newM.forEach(function(m){
+          if(m.from==='dispatch'){
+            document.getElementById('dot-chat').classList.add('show');
+            if(curScreen!=='chat') toast('Dispatch: '+m.text.slice(0,40),'tinfo',4000);
+          }
+        });
+        if(curScreen==='chat') renderChat();
+      }
+    }
+  }).catch(function(){});
+}
+
+function receiveJob(job){
+  activeJob=job; onTrip=true;
+  document.getElementById('job-phone').textContent=job.phone||'—';
+  document.getElementById('job-pickup').textContent=job.pickup||'—';
+  document.getElementById('job-dropoff').textContent=job.dropoff||'—';
+  document.getElementById('job-fare').textContent=job.fare?'$'+job.fare:'—';
+  var nr=document.getElementById('job-notes-row');
+  if(job.notes){nr.style.display='flex';document.getElementById('job-notes').textContent=job.notes;}else nr.style.display='none';
+  updateUI(); pushLocation();
+  db.ref('jobs/'+driver.uid).update({status:'accepted'});
+  toast('New job received!','tinfo',5000);
+}
+
+function openMaps(){
+  if(!activeJob) return;
+  var addr=encodeURIComponent(activeJob.pickup);
+  var url=lastLat?'https://www.google.com/maps/dir/'+lastLat+','+lastLng+'/'+addr:'https://maps.google.com/?q='+addr;
+  window.open(url,'_blank');
+}
+
+// ── FARE PREVIEW ──
+var paymentType='cash';
+function selectPayment(type){
+  paymentType=type;
+  document.getElementById('pay-cash').className='pay-opt'+(type==='cash'?' sel-cash':'');
+  document.getElementById('pay-card').className='pay-opt'+(type==='card'?' sel-card':'');
+  document.getElementById('card-notice').style.display=type==='card'?'block':'none';
+}
+
+function updatePreview(){
+  var fare=parseFloat(document.getElementById('fare-val').value)||0;
+  var toll=parseFloat(document.getElementById('toll-val').value)||0;
+  var preview=document.getElementById('fare-preview');
+  if(fare<=0){preview.style.display='none';return;}
+  preview.style.display='block';
+  var net=Math.max(0,fare-toll);
+  var comm=net*COMMISSION;
+  var take=net-comm;
+  document.getElementById('prev-fare').textContent='$'+fare.toFixed(2);
+  document.getElementById('prev-toll').textContent='$'+toll.toFixed(2);
+  document.getElementById('prev-net').textContent='$'+net.toFixed(2);
+  document.getElementById('prev-comm').textContent='$'+comm.toFixed(2);
+  document.getElementById('prev-take').textContent='$'+take.toFixed(2);
+}
+
+// ── SUBMIT FARE ──
+function submitFare(){
+  var fare=parseFloat(document.getElementById('fare-val').value);
+  var toll=parseFloat(document.getElementById('toll-val').value)||0;
+  if(!fare||fare<=0){toast('Enter the collected amount','terr');return;}
+  var net=Math.max(0,fare-toll);
+  var commission=parseFloat((net*COMMISSION).toFixed(2));
+  var takeHome=parseFloat((net-commission).toFixed(2));
+  var notes=document.getElementById('fare-notes').value.trim();
+  var trip={
+    id:Date.now().toString(),
+    phone:activeJob?activeJob.phone:'—',
+    pickup:activeJob?activeJob.pickup:'—',
+    dropoff:activeJob?activeJob.dropoff:'—',
+    fare:fare,toll:toll,net:net,commission:commission,takeHome:takeHome,notes:notes,
+    paymentType:paymentType,
+    completedAt:new Date().toISOString(),
+    date:new Date().toDateString(),
+    driverName:driver.name,
+    driverId:driver.uid
+  };
+  todayTrips.push(trip);
+  saveLocalTrips();
+  var dateKey=new Date().toDateString().replace(/ /g,'_');
+  if(!allTrips[dateKey]) allTrips[dateKey]=[];
+  allTrips[dateKey].push(trip);
+  localStorage.setItem('allTrips_'+driver.uid,JSON.stringify(allTrips));
+  updateStats();
+  db.ref('trips/'+driver.uid+'/'+trip.id).set(trip).catch(function(){});
+  db.ref('drivers/'+driver.uid).update({onTrip:false,active:true,timestamp:Date.now()}).catch(function(){});
+  db.ref('jobs/'+driver.uid).set(null).catch(function(){});
+  activeJob=null; onTrip=false;
+  document.getElementById('fare-val').value='';
+  document.getElementById('toll-val').value='';
+  document.getElementById('fare-notes').value='';
+  document.getElementById('fare-preview').style.display='none';
+  selectPayment('cash');
+  updateUI(); goScreen('home');
+  var msg=paymentType==='card'?'Card trip logged! Dispatch owes you $'+takeHome.toFixed(2):'Trip done! Take home: $'+takeHome.toFixed(2);
+  toast(msg, paymentType==='card'?'tinfo':'tok', 5000);
+}
+
+// ── TRIP LOG ──
+function loadLocalTrips(){
+  var key='trips_'+(driver?driver.uid:'x')+'_'+new Date().toDateString();
+  try{todayTrips=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){todayTrips=[];}
+  updateStats();
+}
+function loadAllTrips(){
+  loadLocalTrips();
+  try{allTrips=JSON.parse(localStorage.getItem('allTrips_'+(driver?driver.uid:'x'))||'{}');}catch(e){allTrips={};}
+  var dk=new Date().toDateString().replace(/ /g,'_');
+  allTrips[dk]=todayTrips;
+}
+function saveLocalTrips(){
+  var key='trips_'+(driver?driver.uid:'x')+'_'+new Date().toDateString();
+  localStorage.setItem(key,JSON.stringify(todayTrips));
+}
+function renderTripLog(){
+  var el=document.getElementById('trip-list');
+  if(!todayTrips.length){el.innerHTML='<div style="text-align:center;padding:16px 0;color:var(--tx3);font-size:13px">No trips yet today.</div>';return;}
+  el.innerHTML=todayTrips.slice().reverse().map(function(t,i){
+    var time=new Date(t.completedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var badge=t.paymentType==='card'?'<span class="card-badge">CARD</span>':'<span class="cash-badge">CASH</span>';
+    return '<div class="trip-item"><div class="trip-num">'+(todayTrips.length-i)+'</div><div class="trip-info"><div class="trip-route">'+t.pickup+' → '+t.dropoff+badge+'</div><div class="trip-meta">'+t.phone+' · '+time+(t.toll>0?' · Toll: $'+t.toll.toFixed(2):'')+(t.notes?' · '+t.notes:'')+'</div></div><div class="trip-fare"><div class="trip-fare-main">$'+t.fare.toFixed(2)+'</div><div class="trip-fare-comm">-$'+t.commission.toFixed(2)+' comm</div></div></div>';
+  }).join('');
+}
+
+// ── EARNINGS ──
+function setEarnTab(t,el){
+  curEarnTab=t;
+  document.querySelectorAll('.etab').forEach(function(x){x.classList.remove('on');});
+  el.classList.add('on');
+  renderEarnings();
+}
+function renderEarnings(){
+  var el=document.getElementById('earn-content');
+  if(curEarnTab==='day') el.innerHTML=renderDaily();
+  else if(curEarnTab==='week') el.innerHTML=renderWeekly();
+  else el.innerHTML=renderMonthly();
+}
+function renderDaily(){
+  var trips=todayTrips;
+  var tf=trips.reduce(function(s,t){return s+t.fare;},0);
+  var tt=trips.reduce(function(s,t){return s+(t.toll||0);},0);
+  var tn=trips.reduce(function(s,t){return s+t.net;},0);
+  var tc=trips.reduce(function(s,t){return s+t.commission;},0);
+  var tk=trips.reduce(function(s,t){return s+t.takeHome;},0);
+  var hrs=getShiftHours(new Date().toDateString());
+  var perHr=hrs>0&&tk>0?'$'+(tk/hrs).toFixed(2)+'/hr':'—';
+  return '<div class="earn-highlight"><div><div class="earn-highlight-lbl">Your take home today</div><div style="font-size:11px;color:#3a9060;margin-top:2px">'+trips.length+' trips · '+fmtHrs(hrs)+' online</div></div><div class="earn-highlight-val">$'+tk.toFixed(2)+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    +'<div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--tx0)">'+fmtHrs(hrs)+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Hours worked</div></div>'
+    +'<div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue)">'+perHr+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Per hour</div></div>'
+    +'</div>'
+    +'<div class="earn-summary">'
+    +'<div class="earn-row"><span class="earn-lbl">Total fares</span><span class="earn-val">$'+tf.toFixed(2)+'</span></div>'
+    +'<div class="earn-row"><span class="earn-lbl">Tolls paid</span><span class="earn-val" style="color:var(--amber)">$'+tt.toFixed(2)+'</span></div>'
+    +'<div class="earn-row"><span class="earn-lbl">Net (fares − tolls)</span><span class="earn-val">$'+tn.toFixed(2)+'</span></div>'
+    +'<div class="earn-row"><span class="earn-lbl">Commission owed (20%)</span><span class="earn-val" style="color:var(--red)">$'+tc.toFixed(2)+'</span></div>'
+    +'<div class="earn-row" style="padding-top:10px"><span class="earn-lbl" style="font-weight:700;color:var(--tx0)">Your take home</span><span class="earn-val" style="color:var(--green);font-size:18px">$'+tk.toFixed(2)+'</span></div>'
+    +'</div>'+(trips.length===0?'<div style="text-align:center;padding:20px;color:var(--tx3);font-size:13px">No trips today yet.</div>':'')
+  +function(){
+    var cardTrips=trips.filter(function(t){return t.paymentType==='card';});
+    if(!cardTrips.length) return '';
+    var cardTotal=cardTrips.reduce(function(s,t){return s+t.takeHome;},0);
+    return '<div style="background:#1a2e50;border:1px solid #2d4a80;border-radius:12px;padding:12px 14px;margin-top:4px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:11px;color:#7ab0e8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Card trips — dispatch owes you</div><div style="font-size:10px;color:#4a7aaa;margin-top:2px">'+cardTrips.length+' trip'+(cardTrips.length>1?'s':'')+' paid by card</div></div><div style="font-size:20px;font-weight:700;color:#4e8ef7">$'+cardTotal.toFixed(2)+'</div></div></div>';
+  }();
+}
+function renderWeekly(){
+  var today=new Date();
+  var dow=today.getDay();
+  var mon=new Date(today); mon.setDate(today.getDate()-(dow===0?6:dow-1)); mon.setHours(0,0,0,0);
+  var wf=0,wt=0,wn=0,wc=0,wk=0,html='';
+  for(var i=0;i<7;i++){
+    var d=new Date(mon); d.setDate(mon.getDate()+i);
+    var dk=d.toDateString().replace(/ /g,'_');
+    var dt=allTrips[dk]||[];
+    var df=dt.reduce(function(s,t){return s+t.fare;},0);
+    var dtt=dt.reduce(function(s,t){return s+(t.toll||0);},0);
+    var dc=dt.reduce(function(s,t){return s+t.commission;},0);
+    var dth=dt.reduce(function(s,t){return s+t.takeHome;},0);
+    wf+=df;wt+=dtt;wc+=dc;wk+=dth;
+    var isTdy=d.toDateString()===today.toDateString();
+    var isFut=d>today;
+    if(!isFut||dt.length>0){
+      html+='<div class="week-day-card" style="'+(isTdy?'border-color:var(--blue)':'')+'"><div class="week-day-header"><span class="week-day-name" style="'+(isTdy?'color:var(--blue)':'')+'">'+DAYS[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate()+(isTdy?' (today)':'')+'</span><span class="week-day-total">'+(dt.length>0?'$'+dth.toFixed(2):'—')+'</span></div>'+(dt.length>0?'<div class="week-day-detail"><div class="week-detail-item">Fare: <span class="week-detail-val">$'+df.toFixed(2)+'</span></div><div class="week-detail-item">Tolls: <span class="week-detail-val" style="color:var(--amber)">$'+dtt.toFixed(2)+'</span></div><div class="week-detail-item">Comm: <span class="week-detail-val" style="color:var(--red)">$'+dc.toFixed(2)+'</span></div><div class="week-detail-item">Trips: <span class="week-detail-val">'+dt.length+'</span></div></div>':'<div style="font-size:11px;color:var(--tx3)">No trips</div>')+'</div>';
+    }
+  }
+  var isFri=today.getDay()===5;
+  var fridayHtml=isFri&&wc>0?'<div class="comm-alert"><div class="comm-alert-title">🔔 Friday — Commission Due</div><div class="comm-alert-amount">$'+wc.toFixed(2)+'</div><div class="comm-alert-sub">Weekly commission owed to Izik Taxi.<br>Please Zelle this amount today.</div><button class="zelle-btn" onclick="window.open(\'https://www.zellepay.com\',\'_blank\')">Open Zelle</button></div>':'';
+  var wh=0;
+  for(var j=0;j<7;j++){var dj=new Date(mon);dj.setDate(mon.getDate()+j);wh+=getShiftHours(dj.toDateString());}
+  var wPerHr=wh>0&&wk>0?'$'+(wk/wh).toFixed(2)+'/hr':'—';
+  return fridayHtml+'<div class="earn-highlight"><div><div class="earn-highlight-lbl">Week take home</div><div style="font-size:11px;color:#3a9060;margin-top:2px">'+fmtHrs(wh)+' worked this week</div></div><div class="earn-highlight-val">$'+wk.toFixed(2)+'</div></div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--tx0)">'+fmtHrs(wh)+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Hours worked</div></div><div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue)">'+wPerHr+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Per hour avg</div></div></div>'
+  +'<div class="earn-summary"><div class="earn-row"><span class="earn-lbl">Total fares</span><span class="earn-val">$'+wf.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl">Total tolls</span><span class="earn-val" style="color:var(--amber)">$'+wt.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl">Commission (20%)</span><span class="earn-val" style="color:var(--red)">$'+wc.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl" style="font-weight:700;color:var(--tx0)">Your take home</span><span class="earn-val" style="color:var(--green);font-size:18px">$'+wk.toFixed(2)+'</span></div></div>'
+  +'<div style="font-size:11px;color:var(--tx2);margin-bottom:8px;font-weight:600">This week:</div>'+(html||'<div style="text-align:center;padding:16px;color:var(--tx3);font-size:13px">No trips this week yet.</div>');
+}
+function renderMonthly(){
+  var today=new Date();
+  var mf=0,mt=0,mc=0,mk=0,mn=0;
+  Object.entries(allTrips).forEach(function(e){
+    var dk=e[0],trips=e[1];
+    var d=new Date(dk.replace(/_/g,' '));
+    if(d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear()){
+      trips.forEach(function(t){mf+=t.fare;mt+=(t.toll||0);mc+=t.commission;mk+=t.takeHome;mn++;});
+    }
+  });
+  var mh=0;
+  Object.keys(allTrips).forEach(function(dk){var d=new Date(dk.replace(/_/g,' '));if(d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear()){mh+=getShiftHours(d.toDateString());}});
+  var mPerHr=mh>0&&mk>0?'$'+(mk/mh).toFixed(2)+'/hr':'—';
+  return '<div class="earn-highlight"><div><div class="earn-highlight-lbl">'+today.toLocaleDateString('en-US',{month:'long',year:'numeric'})+' take home</div><div style="font-size:11px;color:#3a9060;margin-top:2px">'+mn+' trips · '+fmtHrs(mh)+' worked</div></div><div class="earn-highlight-val">$'+mk.toFixed(2)+'</div></div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--tx0)">'+fmtHrs(mh)+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Hours worked</div></div><div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue)">'+mPerHr+'</div><div style="font-size:10px;color:var(--tx2);margin-top:2px">Per hour avg</div></div></div>'
+  +'<div class="earn-summary"><div class="earn-row"><span class="earn-lbl">Total fares</span><span class="earn-val">$'+mf.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl">Total tolls</span><span class="earn-val" style="color:var(--amber)">$'+mt.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl">Commission (20%)</span><span class="earn-val" style="color:var(--red)">$'+mc.toFixed(2)+'</span></div><div class="earn-row"><span class="earn-lbl" style="font-weight:700;color:var(--tx0)">Your take home</span><span class="earn-val" style="color:var(--green);font-size:18px">$'+mk.toFixed(2)+'</span></div></div>';
+}
+function checkFridayAlert(){
+  if(new Date().getDay()!==5) return;
+  var today=new Date(),dow=today.getDay();
+  var mon=new Date(today); mon.setDate(today.getDate()-(dow===0?6:dow-1)); mon.setHours(0,0,0,0);
+  var wc=0;
+  for(var i=0;i<7;i++){
+    var d=new Date(mon); d.setDate(mon.getDate()+i);
+    var dk=d.toDateString().replace(/ /g,'_');
+    (allTrips[dk]||[]).forEach(function(t){wc+=t.commission;});
+  }
+  if(wc>0) toast('Friday: $'+wc.toFixed(2)+' commission due today!','terr',8000);
+}
+
+// ── CHAT ──
+function sendMsg(){
+  var input=document.getElementById('chat-input');
+  var text=input.value.trim();
+  if(!text||!driver) return;
+  input.value='';
+  var msg={text:text,from:'driver',sender:driver.name,ts:Date.now()};
+  chatMessages.push(msg); renderChat();
+  db.ref('messages/'+driver.uid).push(msg).catch(function(){});
+}
+function renderChat(){
+  var el=document.getElementById('chat-messages');
+  if(!chatMessages.length){el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--tx3);font-size:12px">No messages yet.</div>';return;}
+  el.innerHTML=chatMessages.map(function(m){
+    var isMe=m.from==='driver';
+    var time=new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return '<div style="display:flex;flex-direction:column;align-items:'+(isMe?'flex-end':'flex-start')+'">'
+      +(!isMe?'<div class="msg-sender">Dispatch</div>':'')
+      +'<div class="msg '+(isMe?'msg-me':'msg-from')+'">'+m.text+'<div class="msg-time">'+time+'</div></div></div>';
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+// ── GPS ERROR ──
+function showGPSError(type){
+  removeGPSError();
+  var steps=type==='denied'
+    ?['Open iPhone <strong>Settings</strong>','Tap <strong>Privacy & Security → Location Services</strong>','Make sure it\'s <strong>ON</strong>','Find <strong>Safari</strong> → set to <strong>"While Using"</strong>','Come back and tap Try Again']
+    :['Move outside or near a window','Tap Try Again below'];
+  var div=document.createElement('div'); div.id='gps-err'; div.className='gps-error';
+  div.innerHTML='<div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:10px">'+(type==='denied'?'Location access blocked':'GPS signal lost')+'</div>'
+    +steps.map(function(s,i){return '<div class="gps-step"><div class="gps-num">'+(i+1)+'</div><div style="font-size:12px;color:#c08080;line-height:1.5">'+s+'</div></div>';}).join('')
+    +'<div style="display:flex;gap:8px;margin-top:12px"><button onclick="removeGPSError();goOnline()" style="flex:1;padding:11px;background:var(--red);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Try Again</button><button onclick="removeGPSError()" style="padding:11px 16px;background:#2a0d0d;color:#a06060;border:1px solid #3d1515;border-radius:9px;font-size:14px;cursor:pointer;font-family:inherit">Dismiss</button></div>';
+  document.getElementById('sc-home').appendChild(div);
+}
+function removeGPSError(){var e=document.getElementById('gps-err');if(e)e.remove();}
+
+window.addEventListener('beforeunload',function(){if(isOnline)setOfflineInDB();});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('/sw-driver.js');});
+}
+</script>
+
+<!-- PWA Install Banner -->
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:12px 16px 28px;background:#13161e;border-top:1px solid #2e3548;box-shadow:0 -4px 24px rgba(0,0,0,0.5)">
+  <div style="display:flex;align-items:center;gap:12px;max-width:480px;margin:0 auto">
+    <div style="width:44px;height:44px;border-radius:12px;background:#3ec97a22;border:1.5px solid #3ec97a44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ec97a" stroke-width="2.2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7z"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;color:#f0f2f8">Izik Driver</div>
+      <div style="font-size:11px;color:#7a85a0;margin-top:1px">Add to home screen for the best experience</div>
+    </div>
+    <button id="install-btn" onclick="triggerInstall()" style="padding:9px 16px;background:#3ec97a;border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;touch-action:manipulation">Install</button>
+    <button onclick="dismissInstall()" style="background:none;border:none;color:#4a5270;font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0">×</button>
+  </div>
+</div>
+
+<!-- iOS Install Instructions Sheet -->
+<div id="ios-sheet" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center">
+  <div style="background:#13161e;border:1px solid #2e3548;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:#f0f2f8;margin-bottom:6px">Add to Home Screen</div>
+      <div style="font-size:13px;color:#7a85a0;line-height:1.5">Follow these steps to install the app</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1a2e50;border:1.5px solid #2d6be4;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4e8ef7;flex-shrink:0">1</div>
+        <div style="font-size:13px;color:#f0f2f8">Tap the <strong style="color:#4e8ef7">Share</strong> button <span style="font-size:16px">⎋</span> at the bottom of Safari</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1a2e50;border:1.5px solid #2d6be4;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4e8ef7;flex-shrink:0">2</div>
+        <div style="font-size:13px;color:#f0f2f8">Scroll down and tap <strong style="color:#4e8ef7">Add to Home Screen</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#1a2e50;border:1.5px solid #2d6be4;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4e8ef7;flex-shrink:0">3</div>
+        <div style="font-size:13px;color:#f0f2f8">Tap <strong style="color:#4e8ef7">Add</strong> in the top right corner</div>
+      </div>
+    </div>
+    <button onclick="closeIOSSheet()" style="width:100%;padding:14px;border-radius:12px;background:#1a1e28;border:1.5px solid #2e3548;color:#b0b8d0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button>
+  </div>
+</div>
+
+<script>
+var deferredPrompt = null;
+var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isInStandaloneMode = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+// Don't show if already installed or dismissed recently
+var dismissed = localStorage.getItem('installDismissed');
+var dismissedRecently = dismissed && (Date.now() - parseInt(dismissed)) < 7 * 24 * 60 * 60 * 1000;
+
+if (!isInStandaloneMode && !dismissedRecently) {
+  // Android/Chrome — listen for beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Don't show yet — showInstallBanner() called after login
+  });
+
+  // iOS — only show after login, not on load
+}
+
+function showInstallBanner() {
+  if (isInStandaloneMode || dismissedRecently) return;
+  document.getElementById('install-banner').style.display = 'block';
+}
+
+function triggerInstall() {
+  if (deferredPrompt) {
+    // Android — native prompt
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(result) {
+      deferredPrompt = null;
+      document.getElementById('install-banner').style.display = 'none';
+    });
+  } else {
+    // iOS — show manual instructions sheet
+    document.getElementById('install-banner').style.display = 'none';
+    var sheet = document.getElementById('ios-sheet');
+    sheet.style.display = 'flex';
+  }
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('installDismissed', Date.now().toString());
+}
+
+function closeIOSSheet() {
+  document.getElementById('ios-sheet').style.display = 'none';
+  localStorage.setItem('installDismissed', Date.now().toString());
+}
+</script>
+
+</body>
+</html>
