@@ -90,6 +90,57 @@ exports.sendCancelNotification = functions.database
     return sendToDriver(driverUid, message);
   });
 
+// Remote command from dispatch → driver device (ping location, ring, recall, refresh, alert)
+exports.sendCommandNotification = functions.database
+  .ref('/commands/{driverUid}/{cmdKey}')
+  .onCreate(async (snapshot, context) => {
+    const cmd = snapshot.val();
+    const driverUid = context.params.driverUid;
+    if (!cmd || !cmd.type) return null;
+
+    const titles = {
+      ping_location: '📍 Location requested',
+      ring_device:   '🔔 Dispatch is calling',
+      recall_base:   '🏠 Return to base',
+      refresh_app:   '🔄 Refresh required',
+      alert:         '📢 Dispatch alert',
+    };
+    const bodies = {
+      ping_location: 'Dispatch needs your current location',
+      ring_device:   'Open the app — dispatch needs you now',
+      recall_base:   'Please head back to base',
+      refresh_app:   'Tap to reload and resync your app',
+      alert:         cmd.message || 'New message from dispatch',
+    };
+    // Loud commands demand attention — stronger vibration + sticky notification
+    const loud = cmd.type === 'ring_device' || cmd.type === 'alert' || cmd.type === 'recall_base';
+
+    const message = {
+      notification: {
+        title: titles[cmd.type] || '⚡ Dispatch command',
+        body: bodies[cmd.type] || (cmd.message || ''),
+      },
+      data: {
+        type: 'command',
+        command: String(cmd.type),
+        cmdKey: String(context.params.cmdKey),
+        message: String(cmd.message || ''),
+        from: String(cmd.from || 'Dispatch'),
+      },
+      webpush: {
+        notification: {
+          icon: '/icon-driver.png',
+          vibrate: loud ? [400, 120, 400, 120, 400, 120, 400] : [200, 100, 200],
+          requireInteraction: loud,
+          tag: 'cmd-' + driverUid + '-' + cmd.type,
+        },
+        fcmOptions: { link: 'https://driver.iziktaxi.com' }
+      }
+    };
+
+    return sendToDriver(driverUid, message);
+  });
+
 // Scheduled job assigned
 exports.sendScheduledJobNotification = functions.database
   .ref('/upcoming_jobs/{driverUid}/{jobKey}')

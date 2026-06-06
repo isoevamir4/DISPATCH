@@ -1252,6 +1252,12 @@ function startListeners(){
     renderDList(); // refresh queue positions on driver rows
   });
 
+  // Remote commands sent to drivers — live status/ack updates
+  db.ref('commands').on('value',function(snap){
+    window._commands=snap.val()||{};
+    if(_remoteUid) renderRemoteModal(); // refresh open modal with latest ack status
+  });
+
   // Poll messages every 4s
   setInterval(function(){
     if(!chatDrvId||!dispatcher) return;
@@ -1397,6 +1403,7 @@ function renderDrvTab(){
       +'<span class="badge '+(d.status==='available'?'bon':d.status==='on trip'?'btrip':'boff')+'">'+d.status+'</span>'
       +'<button onclick="event.stopPropagation();openChat(\''+k+'\');showTab(\'msgs\')" style="font-size:10px;padding:3px 8px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;cursor:pointer;font-family:inherit;touch-action:manipulation">Msg</button>'
       +'<button onclick="event.stopPropagation();doReassign(\''+k+'\')" style="font-size:10px;padding:3px 8px;background:var(--amber-bg);color:var(--amber);border:1px solid #3a2a0a;border-radius:6px;cursor:pointer;font-family:inherit;touch-action:manipulation">Zone</button>'
+      +'<button onclick="event.stopPropagation();openRemote(\''+k+'\')" style="font-size:10px;padding:3px 8px;background:#1a1040;color:#a080f0;border:1px solid #3a2a6a;border-radius:6px;cursor:pointer;font-family:inherit;touch-action:manipulation">⚡ Remote</button>'
       +'</div></div>';
   }).join('');
 }
@@ -1630,6 +1637,7 @@ function renderActiveJobs(){
         +'<a href="tel:'+ph+'" style="padding:5px 10px;background:var(--green-bg,#0d2418);border:1px solid #1a4a2e;color:var(--green);border-radius:7px;font-size:11px;font-weight:700;text-decoration:none;flex-shrink:0">📞 Call</a>'
         +'<button onclick="reassignJob(\'' + job.driverUid + '\')" style="padding:5px 10px;background:#1a2e60;border:1px solid #2d4a80;color:#6ba3ff;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Reassign</button>'
         +'<button onclick="cancelActiveJob(\'' + job.driverUid + '\')" style="padding:5px 10px;background:#2a0808;border:1px solid #5a1a1a;color:#ff6060;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Cancel</button>'
+        +'<button onclick="openRemote(\'' + job.driverUid + '\')" style="padding:5px 10px;background:#1a1040;border:1px solid #3a2a6a;color:#a080f0;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">⚡ Remote</button>'
         +'</div>'
         +'</div>'
         +'<div style="flex-shrink:0;width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-left:1px solid var(--br);padding-left:10px">'
@@ -1779,6 +1787,113 @@ function cancelActiveJob(driverUid) {
     logs = logs.filter(function(l){ return l.driverUid !== driverUid; });
     renderLog();
   }).catch(function(e){ toast('Failed: '+e.message,'terr'); });
+}
+
+// ── REMOTE DISPATCH ACTIONS ──
+// Commands are written to commands/{driverUid} and delivered instantly to the
+// driver device via the sendCommandNotification Cloud Function (FCM push).
+var REMOTE_CMDS={
+  ping_location:{icon:'📍',label:'Ping location',color:'#4e8ef7',bg:'#1a2e50',br:'#2d4a80'},
+  ring_device:{icon:'🔔',label:'Ring device',color:'#f5a623',bg:'#251a06',br:'#3a2a08'},
+  recall_base:{icon:'🏠',label:'Recall to base',color:'#a080f0',bg:'#1a1040',br:'#3a2a6a'},
+  refresh_app:{icon:'🔄',label:'Refresh app',color:'#3ec97a',bg:'#0d2418',br:'#1a4a2e'},
+  alert:{icon:'📢',label:'Send alert',color:'#ff6060',bg:'#2a0808',br:'#5a1a1a'}
+};
+var _remoteUid=null, _remoteLocRef=null, _remoteLoc=null;
+
+function sendCommand(uid,type,text){
+  var meta=REMOTE_CMDS[type]; if(!meta) return;
+  var d=drivers.find(function(x){return (x.uid||x.id)===uid;});
+  if(type==='alert'){ text=(text||'').trim(); if(!text){toast('Enter an alert message','terr');return;} }
+  var cmd={
+    type:type, label:meta.label, ts:Date.now(), status:'pending',
+    from:dispatcher?dispatcher.name:'Dispatch',
+    dispatcherUid:dispatcher?dispatcher.uid:null
+  };
+  if(text) cmd.message=text;
+  db.ref('commands/'+uid).push(cmd).then(function(){
+    toast(meta.icon+' '+meta.label+' sent to '+(d?d.name:'driver'),'tok');
+    var inp=document.getElementById('remote-alert-input'); if(inp&&type==='alert') inp.value='';
+  }).catch(function(e){toast('Failed: '+e.message,'terr');});
+}
+
+function openRemote(uid){
+  _remoteUid=uid; _remoteLoc=null;
+  if(_remoteLocRef){ _remoteLocRef.off(); }
+  // Live-watch the driver's last reported location while the modal is open
+  _remoteLocRef=db.ref('drivers/'+uid+'/location');
+  _remoteLocRef.on('value',function(s){ _remoteLoc=s.val(); if(_remoteUid===uid) renderRemoteModal(); });
+  document.getElementById('remote-modal').style.display='flex';
+  renderRemoteModal();
+}
+
+function closeRemote(){
+  _remoteUid=null;
+  if(_remoteLocRef){ _remoteLocRef.off(); _remoteLocRef=null; }
+  document.getElementById('remote-modal').style.display='none';
+}
+
+function renderRemoteModal(){
+  if(!_remoteUid) return;
+  var uid=_remoteUid;
+  var d=drivers.find(function(x){return (x.uid||x.id)===uid;});
+  var name=d?d.name:'Driver', status=d?d.status:'';
+  document.getElementById('remote-title').textContent=name;
+  var statusEl=document.getElementById('remote-status');
+  statusEl.textContent=status?('● '+status):'';
+  statusEl.style.color=status==='available'?'var(--green)':status==='on trip'?'var(--amber)':'var(--tx3)';
+
+  // Last known location
+  var loc=_remoteLoc, locHtml='';
+  if(loc&&loc.lat!=null&&loc.lng!=null){
+    var age=loc.ts?Math.floor((Date.now()-loc.ts)/60000):null;
+    var ageTxt=age==null?'':age<1?'just now':age+'m ago';
+    var fresh=age!=null&&age<2;
+    locHtml='<a href="https://www.google.com/maps?q='+loc.lat+','+loc.lng+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:'+(fresh?'#0d2418':'#13161e')+';border:1px solid '+(fresh?'#1a4a2e':'#2e3548')+';border-radius:10px;text-decoration:none;margin-bottom:14px">'
+      +'<span style="font-size:18px">📍</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:'+(fresh?'var(--green)':'#b0b8d0')+'">Last known location</div>'
+      +'<div style="font-size:10px;color:#7a85a0">'+Number(loc.lat).toFixed(5)+', '+Number(loc.lng).toFixed(5)+(ageTxt?' · '+ageTxt:'')+'</div></div>'
+      +'<span style="font-size:11px;font-weight:700;color:#4e8ef7">Open ›</span></a>';
+  } else {
+    locHtml='<div style="padding:11px 12px;background:#13161e;border:1px dashed #2e3548;border-radius:10px;font-size:11px;color:#7a85a0;margin-bottom:14px;text-align:center">No location reported yet — send a Ping</div>';
+  }
+
+  // Command buttons (alert handled separately with its own input)
+  var btns=['ping_location','ring_device','recall_base','refresh_app'].map(function(t){
+    var m=REMOTE_CMDS[t];
+    return '<button onclick="sendCommand(\''+uid+'\',\''+t+'\')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 6px;background:'+m.bg+';border:1px solid '+m.br+';border-radius:12px;cursor:pointer;font-family:inherit;touch-action:manipulation">'
+      +'<span style="font-size:20px">'+m.icon+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+m.color+';text-align:center;line-height:1.2">'+m.label+'</span></button>';
+  }).join('');
+
+  // Command history with live delivery/ack status
+  var cmds=(window._commands&&window._commands[uid])?Object.values(window._commands[uid]):[];
+  cmds.sort(function(a,b){return b.ts-a.ts;});
+  var histHtml=cmds.length?cmds.slice(0,6).map(function(c){
+    var m=REMOTE_CMDS[c.type]||{icon:'•',label:c.type};
+    var st=c.status||'pending';
+    var stColor=st==='done'?'var(--green)':st==='ack'?'#4e8ef7':'#7a85a0';
+    var stTxt=st==='done'?'✓ Done':st==='ack'?'Seen':'Sent';
+    var tm=new Date(c.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1c2030">'
+      +'<span style="font-size:14px">'+m.icon+'</span>'
+      +'<div style="flex:1;min-width:0;overflow:hidden"><span style="font-size:12px;color:#d0d6e6;font-weight:600">'+m.label+'</span>'+(c.message?' <span style="font-size:11px;color:#7a85a0">— '+c.message+'</span>':'')+'</div>'
+      +'<span style="font-size:9px;color:#5a637a">'+tm+'</span>'
+      +'<span style="font-size:9px;font-weight:700;color:'+stColor+';min-width:36px;text-align:right">'+stTxt+'</span></div>';
+  }).join(''):'<div style="font-size:11px;color:#5a637a;text-align:center;padding:10px">No commands sent yet</div>';
+
+  // Preserve the alert input across live re-renders
+  var prevAlert=(document.getElementById('remote-alert-input')||{}).value||'';
+  document.getElementById('remote-body').innerHTML=
+    locHtml
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'+btns+'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:18px">'
+    +'<input id="remote-alert-input" placeholder="Custom alert message…" onkeydown="if(event.key===\'Enter\')sendCommand(\''+uid+'\',\'alert\',this.value)" style="flex:1;min-width:0;background:#13161e;border:1px solid #2e3548;border-radius:10px;padding:10px 12px;font-size:13px;color:#f0f2f8;font-family:inherit;outline:none"/>'
+    +'<button onclick="sendCommand(\''+uid+'\',\'alert\',document.getElementById(\'remote-alert-input\').value)" style="padding:10px 14px;background:#2a0808;border:1px solid #5a1a1a;color:#ff6060;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">📢 Alert</button>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#7a85a0;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Recent commands</div>'
+    +'<div>'+histHtml+'</div>';
+  var ai=document.getElementById('remote-alert-input'); if(ai) ai.value=prevAlert;
 }
 
 // ── QUEUES ──
@@ -3482,6 +3597,20 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-dispatch.j
     <div style="font-size:11px;color:#7a85a0;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Select new driver</div>
     <div id="reassign-driver-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
     <button onclick="closeReassignModal()" style="width:100%;padding:12px;border-radius:10px;background:#1a1e28;border:1.5px solid #2e3548;color:#b0b8d0;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+  </div>
+</div>
+
+<!-- Remote Action Center -->
+<div id="remote-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#13161e;border:1px solid #2e3548;border-radius:20px;padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span style="font-size:18px">🎛️</span>
+      <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700;color:#f0f2f8" id="remote-title">Driver</div></div>
+      <span id="remote-status" style="font-size:11px;font-weight:700"></span>
+    </div>
+    <div style="font-size:11px;color:#7a85a0;margin-bottom:16px">Remote dispatch actions — delivered instantly</div>
+    <div id="remote-body"></div>
+    <button onclick="closeRemote()" style="width:100%;margin-top:16px;padding:12px;border-radius:10px;background:#1a1e28;border:1.5px solid #2e3548;color:#b0b8d0;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>
   </div>
 </div>
 
